@@ -1,0 +1,77 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?Set MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER:?Set MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL}
+      REPORT_SOURCE: database
+      API_KEY: ${API_KEY:?Set API_KEY}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      WECHAT_APP_ID: ${WECHAT_APP_ID:-}
+      WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
+      SYNC_ENABLED: ${SYNC_ENABLED:-false}
+      POS_CENTER_ID: ${POS_CENTER_ID:-}
+      POS_APP_ID: ${POS_APP_ID:-}
+      POS_ACCESS_ID: ${POS_ACCESS_ID:-}
+      POS_ADAPTER: ${POS_ADAPTER:-mock}
+      POS_BOWL_REVENUE_TYPE_ID: ${POS_BOWL_REVENUE_TYPE_ID:-}
+      POS_EXCLUDED_CUSTOMER_PAYWAYS: ${POS_EXCLUDED_CUSTOMER_PAYWAYS:-员工餐}
+      POS_BRAND_NAME: ${POS_BRAND_NAME:-米熊}
+      POS_LUNCH_SHIFT_ID: ${POS_LUNCH_SHIFT_ID:-}
+      POS_DINNER_SHIFT_ID: ${POS_DINNER_SHIFT_ID:-}
+      POS_LOG_KEY: ${POS_LOG_KEY:-}
+      TZ: Asia/Shanghai
+      PORT: 3000
+    ports:
+      - "127.0.0.1:${API_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+  caddy:
+    image: docker.m.daocloud.io/library/caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      - admin
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  mysql_data:
+  caddy_data:
+  caddy_config:

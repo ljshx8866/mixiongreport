@@ -1,0 +1,19 @@
+{
+  "name": "restaurant-report-system",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "npm run start:dev -w @restaurant/api",
+    "build": "npm run build -w @restaurant/report-engine && npm run build -w @restaurant/api",
+    "test": "npm run test -w @restaurant/report-engine && npm run test -w @restaurant/api",
+    "prisma:generate": "prisma generate --schema database/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema database/prisma/schema.prisma",
+    "prisma:seed": "tsx database/prisma/seed.ts"
+  },
+  "devDependencies": {
+    "@prisma/client": "6.16.3",
+    "prisma": "6.16.3",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.2"
+  }
+}

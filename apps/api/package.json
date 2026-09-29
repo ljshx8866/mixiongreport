@@ -1,0 +1,31 @@
+{
+  "name": "@restaurant/api",
+  "version": "1.0.0",
+  "scripts": {
+    "start:dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test --test-isolation=none test/*.test.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6",
+    "@nestjs/jwt": "^12.0.2",
+    "@nestjs/platform-express": "^11.1.6",
+    "@nestjs/schedule": "^6.0.1",
+    "@prisma/client": "6.16.3",
+    "@restaurant/report-engine": "1.0.0",
+    "bcryptjs": "^3.0.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "exceljs": "^4.4.0",
+    "json-bigint": "^1.0.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.4.0",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.4"
+  }
+}

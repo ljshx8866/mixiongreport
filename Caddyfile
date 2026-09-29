@@ -1,0 +1,5 @@
+mx.sxhhg.com.cn {
+  encode zstd gzip
+
+  reverse_proxy admin:80
+}

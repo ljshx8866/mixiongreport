@@ -1,0 +1,17 @@
+{
+  "name": "米熊经营日报",
+  "appid": "__UNI__RESTAURANT_REPORT",
+  "description": "连锁餐饮门店经营日报",
+  "versionName": "1.2.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "wxac6bc490e2220ecf",
+    "setting": {
+      "urlCheck": true,
+      "es6": true,
+      "minified": true
+    },
+    "usingComponents": true
+  }
+}
