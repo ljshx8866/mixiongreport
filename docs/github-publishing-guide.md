@@ -13,7 +13,7 @@ GitHub 只保存代码和文档，不会自动部署生产服务器，也不会�
 - 本地仓库已在 `E:\mixiongreport`，默认分支是 `main`。
 - `origin` 已配置为 `https://github.com/ljshx8866/mixiongreport.git`。
 - 本地项目基线已提交，提交说明为 `chore: prepare project handover and GitHub baseline`。
-- GitHub CLI（`gh`）未安装。用户已确认当前远程仓库归其管理且为 Private；但 2026-11-09 推送时本机连接 `github.com:443` 失败，远端分支状态仍未读取，项目尚未上传。网络恢复后运行 `git push -u origin main`；若提示远端有新提交，不要强推，先检查差异。
+- GitHub CLI（`gh`）未安装。用户已确认当前远程仓库归其管理且为 Private。2026-11-09 首次推送失败是因为命令行代理环境变量指向未监听的本地端口；改用当时已运行的本机系统代理后，GitHub HTTPS 正常，项目已成功推送到 `origin/main`。代理端口可能变化；如再次失败，检查命令行代理和系统代理是否一致，不要把代理凭据或 token 写入仓库/全局 Git 配置。
 
 **建议仓库设为 Private（私有）**。系统包含经营流程、员工功能和部署配置。即使仓库私有，也不要上传真实密钥、个人资料或数据库备份。
 
