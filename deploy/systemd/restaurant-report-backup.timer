@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Restaurant Report database backup
+
+[Timer]
+OnCalendar=*-*-* 02:30:00 Asia/Shanghai
+Persistent=true
+RandomizedDelaySec=300
+Unit=restaurant-report-backup.service
+
+[Install]
+WantedBy=timers.target

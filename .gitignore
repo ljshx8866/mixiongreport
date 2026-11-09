@@ -1,8 +1,34 @@
 node_modules/
+.local-backups/
 dist/
 .env
+.env.*
+!.env.example
+!.env.production.example
+!apps/miniapp/.env.production.example
 .env.*.local
 coverage/
 *.tsbuildinfo
+__pycache__/
+*.py[cod]
 docs/wuuxiang-*
 docs/pos-pages/
+
+# Local production configuration; keep only the checked-in examples.
+apps/miniapp/.env.production
+
+# Generated release packages, local backup exports and database dumps.
+release-staging/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.sql
+*.sql.gz
+*.dump
+backups/
+
+# WeChat upload/build receipts are local release artifacts.
+miniapp-upload-*.json
+apps/miniapp-upload-*.json
+miniapp-preview-*.json

@@ -58,21 +58,25 @@ export function calculateDailyReport(source: ReportSource) {
   const total = sales?.total.amount ?? null;
   const manual = source.manual;
   const powerFields = manual && [manual.kitchenPower, manual.diningPower, manual.fullDayPower, manual.airConditionPower];
-  const totalPower = source.powerMode === 'MANUAL_TOTAL'
-    ? manual?.totalPower ?? null
-    : powerFields?.every((n) => n !== null)
+  const totalPower = manual?.totalPower ?? (source.powerMode === 'SUM_COMPONENTS' && powerFields?.every((n) => n !== null)
       ? sumNumbers(powerFields as number[])
-      : null;
+      : null);
   const groupAmount = sumMoney(source.platforms.map((p) => p.amount));
   const groupCustomers = source.platforms.reduce((sum, p) => sum + p.customers, 0);
-  const grouped = new Map<number, { categoryId: number; categoryName: string; order: number; items: RawProduct[] }>();
+  const grouped = new Map<number, { categoryId: number; categoryName: string; order: number; itemsById: Map<number, RawProduct> }>();
   for (const product of source.products) {
     if (!grouped.has(product.categoryId)) grouped.set(product.categoryId, {
-      categoryId: product.categoryId, categoryName: product.categoryName, order: product.categoryOrder, items: [],
+      categoryId: product.categoryId, categoryName: product.categoryName, order: product.categoryOrder, itemsById: new Map(),
     });
-    grouped.get(product.categoryId)!.items.push(product);
+    const items = grouped.get(product.categoryId)!.itemsById;
+    const existing = items.get(product.productId);
+    if (existing) {
+      existing.quantity = sumNumbers([existing.quantity, product.quantity]);
+      existing.salesAmount = sumMoney([existing.salesAmount, product.salesAmount]);
+    } else items.set(product.productId, { ...product });
   }
-  const categories = [...grouped.values()].sort((a, b) => a.order - b.order || a.categoryId - b.categoryId);
+  const categories = [...grouped.values()].map(({ itemsById, ...category }) => ({ ...category, items: [...itemsById.values()] }))
+    .sort((a, b) => a.order - b.order || a.categoryId - b.categoryId);
   const warnings: string[] = [];
   if (sales && Math.abs(moneyCents(sales.total.amount) - moneyCents(sumMoney([sales.dineIn.amount, sales.delivery.amount]))) > 1)
     warnings.push('SALES_CHANNEL_MISMATCH');

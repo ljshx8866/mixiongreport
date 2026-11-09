@@ -1,0 +1,10 @@
+[Unit]
+Description=One-time low-traffic POS synchronization log compaction
+
+[Timer]
+OnCalendar=2026-10-24 03:45:00 Asia/Shanghai
+Persistent=false
+Unit=restaurant-report-compact-sync-logs.service
+
+[Install]
+WantedBy=timers.target

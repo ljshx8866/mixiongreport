@@ -1,0 +1,13 @@
+[Unit]
+Description=One-time compaction of expired POS synchronization payloads
+After=docker.service restaurant-report-backup.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/restaurant-report
+ExecStart=/opt/restaurant-report/scripts/compact-sync-log-payloads.sh
+TimeoutStartSec=4h
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

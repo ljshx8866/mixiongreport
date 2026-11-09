@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>小程序点位与排班汇总图操作说明</title>
+  <style>
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif; color: #26344b; }
+    body { background: #e9edf4; }
+    .page { width: 210mm; height: 297mm; margin: 0 auto; padding: 13mm 14mm 12mm; overflow: hidden; position: relative; background: #f4f6fa; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    .brand { display: flex; align-items: center; gap: 8px; color: #8a95a6; font-size: 10px; letter-spacing: 1px; }
+    .brand-mark { width: 23px; height: 23px; border-radius: 7px; display: grid; place-items: center; background: #ed5a18; color: white; font-weight: 700; font-size: 12px; }
+    h1 { margin: 13px 0 4px; font-size: 27px; line-height: 1.2; color: #1d2939; }
+    .subtitle { margin: 0; color: #7b879b; font-size: 12px; }
+    .route { margin-top: 13px; padding: 10px 14px; border: 1px solid #f2dfd3; border-radius: 11px; background: #fff8f2; color: #9b5733; font-size: 11px; }
+    .route strong { color: #d45519; }
+    .step { display: grid; grid-template-columns: 0.78fr 1.22fr; gap: 16px; align-items: center; margin-top: 17px; padding: 14px; border: 1px solid #e8ecf2; border-radius: 16px; background: #fff; box-shadow: 0 5px 15px rgba(32,45,66,.045); }
+    .step.reverse { grid-template-columns: 1.22fr .78fr; }
+    .step-copy { padding: 4px 3px; }
+    .step-no { display: inline-grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: #ed5a18; color: #fff; font-size: 12px; font-weight: 700; vertical-align: middle; }
+    h2 { display: inline; margin: 0 0 0 7px; color: #26344b; font-size: 17px; vertical-align: middle; }
+    .step-copy p { margin: 11px 0 0; color: #5e6b80; font-size: 11px; line-height: 1.85; }
+    .step-copy .hint { margin-top: 9px; padding: 8px 9px; border-radius: 9px; background: #fff5ec; color: #a45428; font-size: 10px; line-height: 1.65; }
+    .phone { width: 100%; max-width: 300px; margin: auto; border: 5px solid #233148; border-radius: 24px; overflow: hidden; background: #f4f6fa; box-shadow: 0 7px 17px rgba(25,39,61,.18); }
+    .phone-bar { height: 25px; background: white; display: flex; justify-content: space-between; align-items: center; padding: 0 12px; font-size: 8px; color: #26344b; }
+    .phone-nav { height: 36px; border-bottom: 1px solid #edf0f4; background: white; text-align: center; line-height: 36px; font-size: 13px; font-weight: 700; }
+    .screen { padding: 10px; min-height: 266px; background: #f2f5fa; }
+    .hero { padding: 12px; border: 1px solid #f2dfd3; border-radius: 13px; background: linear-gradient(135deg,#fff8f2,#fbe8db); }
+    .eyebrow { display: block; color: #c96a35; font-size: 8px; font-weight: 700; }
+    .hero-title { display: block; margin-top: 3px; color: #26344b; font-size: 18px; font-weight: 750; }
+    .hero-desc { display: block; margin-top: 5px; color: #876855; font-size: 8px; line-height: 1.6; }
+    .panel { margin-top: 9px; padding: 10px; border: 1px solid #edf0f5; border-radius: 12px; background: white; }
+    .panel-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; color: #26344b; font-size: 10px; font-weight: 700; }
+    .small { color: #8995a7; font-size: 8px; font-weight: 400; }
+    .field-label { display: block; margin: 6px 0 4px; color: #7c879a; font-size: 8px; }
+    .input { height: 27px; padding: 0 8px; border: 1px solid #e6eaf0; border-radius: 7px; background: #fbfcfe; color: #8a95a6; font-size: 8px; line-height: 27px; }
+    .button { display: inline-block; padding: 7px 10px; border-radius: 7px; background: #ed5a18; color: white; text-align: center; font-size: 8px; font-weight: 700; }
+    .button.full { display: block; margin-top: 8px; }
+    .point-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 8px; border-radius: 9px; background: #fbfcfe; border: 1px solid #edf0f4; }
+    .pin { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 8px; background: #fff0e6; color: #dd591c; font-size: 9px; font-weight: 700; }
+    .point-name { flex: 1; color: #26344b; font-size: 9px; font-weight: 700; }
+    .action { color: #d35b24; font-size: 8px; }
+    .datebox { display: flex; justify-content: space-between; align-items: center; margin-top: 9px; padding-top: 8px; border-top: 1px solid #efd8c9; color: #58667b; font-size: 9px; }
+    .link { color: #d55b25; font-size: 8px; }
+    .employee { margin-top: 8px; padding: 9px; border: 1px solid #f0b596; border-radius: 11px; background: #fff; }
+    .employee-head { display: flex; align-items: center; gap: 7px; color: #26344b; font-size: 10px; font-weight: 700; }
+    .check { width: 13px; height: 13px; border-radius: 50%; background: #e85d21; color: white; text-align: center; line-height: 13px; font-size: 8px; }
+    .point-select { display: flex; justify-content: space-between; margin-top: 8px; padding: 7px 8px; border: 1px solid #f0ded2; border-radius: 8px; background: #fffaf6; color: #6d7789; font-size: 8px; }
+    .point-select b { color: #cf571f; }
+    .shift-pick { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 7px; border: 1px solid #ed8d61; border-radius: 8px; background: #fff6f0; font-size: 8px; }
+    .shift-pick .check { width: 11px; height: 11px; line-height: 11px; }
+    .shift-time { margin-left: auto; color: #8995a7; font-size: 7px; }
+    .conflict { display: flex; gap: 6px; align-items: center; margin-top: 7px; padding: 7px; border-radius: 8px; background: #f5f6f8; color: #a0a8b5; font-size: 8px; }
+    .sticky { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding: 8px; border: 1px solid #f0e1d8; border-radius: 10px; background: white; }
+    .sticky-text { color: #26344b; font-size: 8px; font-weight: 700; }
+    .employee-card { margin-top: 7px; padding: 8px; border: 1px solid #edf0f4; border-radius: 9px; background: #fff; }
+    .draft-head { display: flex; justify-content: space-between; align-items: center; color: #26344b; font-size: 9px; font-weight: 700; }
+    .draft-tag { padding: 3px 7px; border-radius: 10px; background: #fff4e8; color: #b45b31; font-size: 7px; }
+    .time { margin-top: 5px; color: #d9561e; font-size: 9px; font-weight: 700; }
+    .publish { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding: 8px; border: 1px solid #f1d9cc; border-radius: 10px; background: #fffaf6; }
+    .poster-head { padding: 11px 12px; background: #fff; }
+    .poster-head strong { display: block; color: #1d2939; font-size: 12px; }
+    .poster-head span { display: block; margin-top: 4px; color: #7b879b; font-size: 8px; }
+    .poster-date { float: right; margin-top: -23px; padding: 5px 7px; border-radius: 7px; background: #fff0e7; color: #dd5618; font-size: 8px; }
+    .poster-count { margin: 7px 0; text-align: right; color: #718096; font-size: 7px; }
+    .poster-table { overflow: hidden; border-radius: 8px; border: 1px solid #dce2eb; background: white; }
+    .table-row { display: grid; grid-template-columns: 52px 48px 1fr; min-height: 40px; border-top: 1px solid #e5e9f0; }
+    .table-row:first-child { border-top: 0; }
+    .table-row.head { min-height: 28px; background: #25354d; color: white; font-size: 8px; font-weight: 700; }
+    .cell { position: relative; display: flex; align-items: center; padding: 4px 5px; border-left: 1px solid #e5e9f0; color: #526176; font-size: 7px; }
+    .cell:first-child { border-left: 0; }
+    .namecell { font-weight: 700; }
+    .namecell.red { background: #fee4e2; color: #b42318; border-left: 3px solid #b42318; }
+    .namecell.blue { background: #d1e9ff; color: #026aa2; border-left: 3px solid #026aa2; }
+    .namecell.green { background: #d1fadf; color: #027a48; border-left: 3px solid #027a48; }
+    .timeline { display: flex; align-items: center; position: relative; min-width: 0; padding: 0 5px; }
+    .bar { display: block; height: 17px; min-width: 45px; border-radius: 5px; padding: 4px 5px; color: white; white-space: nowrap; font-size: 6px; font-weight: 700; }
+    .bar.red { background: #b42318; margin-left: 4%; }
+    .bar.blue { background: #026aa2; margin-left: 27%; }
+    .bar.green { background: #027a48; margin-left: 53%; }
+    .axis { display: flex; justify-content: space-between; padding: 5px 5px 4px 108px; color: #8b96a7; font-size: 6px; }
+    .poster-actions { display: flex; gap: 7px; margin-top: 8px; }
+    .poster-actions span { flex: 1; padding: 8px; border-radius: 8px; text-align: center; font-size: 8px; font-weight: 700; }
+    .save { border: 1px solid #e9a783; background: white; color: #d45519; }
+    .share { background: #ed5a18; color: white; }
+    .page-footer { position: absolute; bottom: 8mm; left: 14mm; right: 14mm; display: flex; justify-content: space-between; border-top: 1px solid #e2e7ef; padding-top: 7px; color: #98a2b3; font-size: 8px; }
+    .tipbox { margin-top: 13px; padding: 10px 12px; border-left: 3px solid #ed5a18; border-radius: 8px; background: #fff8f2; color: #875537; font-size: 9px; line-height: 1.75; }
+    .note { color: #8995a7; font-size: 8px; line-height: 1.6; }
+    @media screen { .page { margin: 12px auto; box-shadow: 0 4px 24px #b9c1ce; } }
+  </style>
+</head>
+<body>
+  <section class="page">
+    <div class="brand"><span class="brand-mark">米</span>米熊 · 门店小程序</div>
+    <h1>排班点位与汇总图</h1>
+    <p class="subtitle">门店端操作说明 · 设置点位、安排班次、统一发布并分享排班</p>
+    <div class="route"><strong>入口：</strong>工作台 → 门店排班　　需要账号拥有“门店排班”权限</div>
+
+    <div class="step">
+      <div class="step-copy">
+        <span class="step-no">1</span><h2>先设置门店点位</h2>
+        <p>进入「门店排班」后，点击标题右侧的<strong>点位设置</strong>。填写点位名称，例如“前厅”“收银台”“厨房”，点击“添加点位”。</p>
+        <p>已有点位可编辑、停用或删除。停用后不再用于新排班；历史排班仍保留原点位名称。</p>
+        <div class="hint">建议先把本店常用工作区域设置好，再开始排班。点位设置按门店分别维护。</div>
+      </div>
+      <div class="phone">
+        <div class="phone-bar"><span>9:41</span><span>●●●　Wi-Fi　▰</span></div>
+        <div class="phone-nav">门店点位设置</div>
+        <div class="screen">
+          <div class="hero"><span class="eyebrow">排班管理</span><span class="hero-title">门店点位设置</span><span class="hero-desc">设置门店员工排班时可选择的工作点位。</span></div>
+          <div class="panel"><div class="panel-title">新增点位</div><span class="field-label">点位名称</span><div class="input">例如：前厅、收银台、厨房</div><span class="field-label">显示顺序</span><div class="input">0</div><span class="button full">添加点位</span></div>
+          <div class="panel"><div class="panel-title">可用点位 <span class="small">2 个</span></div><div class="point-row"><span class="pin">位</span><span class="point-name">前厅</span><span class="action">编辑　停用　删除</span></div><div class="point-row"><span class="pin">位</span><span class="point-name">收银台</span><span class="action">编辑　停用　删除</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step reverse">
+      <div class="phone">
+        <div class="phone-bar"><span>9:41</span><span>●●●　Wi-Fi　▰</span></div>
+        <div class="phone-nav">门店排班</div>
+        <div class="screen">
+          <div class="hero"><span class="eyebrow">门店排班</span><span class="hero-title">安排员工班次</span><div class="datebox"><span>排班日期　2026年10月23日</span><span class="link">选择日期 ›</span></div></div>
+          <div class="panel"><div class="panel-title">选择员工和班次 <span class="link">点位设置　班次设置</span></div>
+            <div class="employee"><div class="employee-head"><span class="check">✓</span>张三 <span class="small">已选 2 个班次</span></div>
+              <div class="point-select"><span>排班点位</span><b>前厅　选择 ›</b></div>
+              <div class="shift-pick"><span class="check">✓</span><b>早班</b><span class="shift-time">10:00–14:00</span></div>
+              <div class="shift-pick"><span class="check">✓</span><b>晚班</b><span class="shift-time">17:00–21:00</span></div>
+            </div>
+            <div class="employee"><div class="employee-head"><span class="check">✓</span>李四 <span class="small">已选 1 个班次</span></div><div class="point-select"><span>排班点位</span><b>收银台　选择 ›</b></div><div class="shift-pick"><span class="check">✓</span><b>中班</b><span class="shift-time">13:00–17:00</span></div></div>
+          </div>
+          <div class="sticky"><span class="sticky-text">已选择 3 个班次 · 2 名员工</span><span class="button">保存全部草稿</span></div>
+        </div>
+      </div>
+      <div class="step-copy">
+        <span class="step-no">2</span><h2>选择员工、点位和班次</h2>
+        <p>选择排班日期，点选员工卡片。在员工的班次列表上方先选择<strong>排班点位</strong>，再勾选一个或多个班次。</p>
+        <p>同一员工当天可安排多个班次。若时间冲突，系统会提示并阻止选择。安排完成后点击<strong>保存全部草稿</strong>。</p>
+        <div class="hint">每位员工分别选点位；同一员工本次所选的班次使用该点位。保存草稿后还未正式发布。</div>
+      </div>
+    </div>
+    <div class="page-footer"><span>小程序操作示意图 · 页面样式以实际版本为准</span><span>1 / 2</span></div>
+  </section>
+
+  <section class="page">
+    <div class="brand"><span class="brand-mark">米</span>米熊 · 门店小程序</div>
+    <h1>核对发布，再生成汇总图</h1>
+    <p class="subtitle">汇总图片只展示当前门店、当前日期已经发布的班次</p>
+
+    <div class="step">
+      <div class="step-copy">
+        <span class="step-no">3</span><h2>核对后统一发布</h2>
+        <p>在「当日排班」核对员工、点位和班次时间。确认无误后，点击<strong>统一发布</strong>，本日待发布的排班会一起生效。</p>
+        <div class="hint">如果还有草稿没有检查，先不要发布。发布后如需调整，请在排班记录中调整并重新发布。</div>
+      </div>
+      <div class="phone">
+        <div class="phone-bar"><span>9:41</span><span>●●●　Wi-Fi　▰</span></div>
+        <div class="phone-nav">门店排班</div>
+        <div class="screen">
+          <div class="hero"><span class="eyebrow">门店排班</span><span class="hero-title">当日排班</span><span class="hero-desc">2026年10月23日 · 3 个班次草稿与已发布记录</span></div>
+          <div class="publish"><span><b style="font-size:10px;color:#26344b">3 个草稿待发布</b><br><span class="small">核对以下班次后，一次性发布</span></span><span class="button">统一发布</span></div>
+          <div class="employee-card"><div class="draft-head"><span>张三　·　前厅</span><span class="draft-tag">待发布</span></div><div class="time">早班　10:00 至 14:00</div></div>
+          <div class="employee-card"><div class="draft-head"><span>张三　·　前厅</span><span class="draft-tag">待发布</span></div><div class="time">晚班　17:00 至 21:00</div></div>
+          <div class="employee-card"><div class="draft-head"><span>李四　·　收银台</span><span class="draft-tag">待发布</span></div><div class="time">中班　13:00 至 17:00</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step reverse">
+      <div class="phone">
+        <div class="phone-bar"><span>9:41</span><span>●●●　Wi-Fi　▰</span></div>
+        <div class="phone-nav">排班汇总图片</div>
+        <div class="screen" style="padding:8px">
+          <div class="poster-head"><strong>高新店 · 排班表</strong><span>2026-10-23 · 已发布 3 个班次</span><i class="poster-date">2026-10-23</i></div>
+          <div class="poster-count">第 1 张 / 共 1 张 · 2 名员工</div>
+          <div class="poster-table">
+            <div class="table-row head"><div class="cell">员工</div><div class="cell">点位</div><div class="cell">班次时间轴</div></div>
+            <div class="table-row"><div class="cell namecell red">张三</div><div class="cell">前厅</div><div class="timeline"><span class="bar red">早班 10:00–14:00</span></div></div>
+            <div class="table-row"><div class="cell namecell red">张三</div><div class="cell">前厅</div><div class="timeline"><span class="bar red">晚班 17:00–21:00</span></div></div>
+            <div class="table-row"><div class="cell namecell blue">李四</div><div class="cell">收银台</div><div class="timeline"><span class="bar blue">中班 13:00–17:00</span></div></div>
+          </div>
+          <div class="axis"><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span></div>
+          <div class="poster-actions"><span class="save">保存图片</span><span class="share">转发图片</span></div>
+          <div class="note" style="text-align:center;margin-top:6px">图片只包含当前门店、当前日期已发布的排班</div>
+        </div>
+      </div>
+      <div class="step-copy">
+        <span class="step-no">4</span><h2>生成、保存或转发</h2>
+        <p>发布成功后，点击「当日排班」标题旁的<strong>生成汇总图片</strong>。图片按员工展示姓名、点位和班次时间轴。</p>
+        <p>每位员工使用一种颜色，同一员工的班次保持同色。点击<strong>保存图片</strong>存入相册；点击<strong>转发图片</strong>发送给员工。若未直接打开转发菜单，可预览图片后长按转发。</p>
+        <div class="tipbox"><strong>生成前请确认：</strong><br>① 排班已统一发布；② 当前日期和门店正确；③ 汇总图不会包含未发布草稿。</div>
+      </div>
+    </div>
+
+    <div class="page-footer"><span>小程序操作示意图 · 页面样式以实际版本为准</span><span>2 / 2</span></div>
+  </section>
+</body>
+</html>

@@ -39,7 +39,24 @@ export type WuuxiangTicket = {
   incomeMoney: number;
 };
 export type WuuxiangCategory = { class_id: string; class_code: string; class_name: string; level: number; parent_id: string; delflg: number };
-export type WuuxiangProduct = { item_id: string; item_code: string; item_name: string; small_class_id: string; big_class_id: string; std_price?: number; cost_price?: number; delflg: number };
+export type WuuxiangProduct = { item_id: string; item_code: string; item_name: string; small_class_id: string; big_class_id: string; std_price?: number; cost_price?: number; delflg: number; is_enable?: boolean | number | string; is_package?: boolean | number | string };
+export type WuuxiangEmployee = {
+  id: string;
+  code: string;
+  name: string;
+  dutyId?: string;
+  dutyName?: string;
+  cellphone?: string;
+  shopId?: string | number;
+};
+export type WuuxiangEmployeeAccess = {
+  id: string;
+  code: string;
+  name: string;
+  isEnable: boolean;
+  isAdmin: boolean;
+  authAccessShopList?: Array<{ id: string | number; code?: string; name?: string }>;
+};
 
 /** One instance per app process. The POS invalidates old tokens when a new one is requested. */
 export class WuuxiangClient {
@@ -122,6 +139,16 @@ export class WuuxiangClient {
 
   products(shopId: string): Promise<WuuxiangProduct[]> {
     return this.pages<WuuxiangProduct>('/api/datatransfer/getitems', { shopId }, 'item', 300);
+  }
+
+  employees(): Promise<WuuxiangEmployee[]> {
+    return this.pages<WuuxiangEmployee>('/api/datatransfer/getEmpArchives', { shopId: -1 }, 'empList');
+  }
+
+  async employeeAccessShops(): Promise<WuuxiangEmployeeAccess[]> {
+    const data = await this.request<Record<string, unknown>>('/api/datatransfer/getEmpAccessShops', {});
+    if (!Array.isArray(data.empList)) throw new Error(`POS employee access response did not return empList; data keys: ${Object.keys(data).join(', ')}`);
+    return data.empList as WuuxiangEmployeeAccess[];
   }
 
   bills(shopId: string, settleDate: string, needPkgDetail = false): Promise<WuuxiangBill[]> {

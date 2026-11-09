@@ -59,11 +59,12 @@ export function mapWuuxiangDaily(
     const billCents = cents(bill.income_total);
     saleCents[channel] += billCents;
     const shiftId = String(bill.settle_shift_id ?? '');
-    const hasShiftMapping = periodConfigs.some((p) => p.externalShiftId);
-    const period = hasShiftMapping
-      ? periodConfigs.find((p) => p.externalShiftId === shiftId)
-      : periodConfigs.find((p) => timeMatches(String(bill.settle_time).slice(11, 16), p));
-    if (!period) throw new Error(`No business period for POS shift ${shiftId}`);
+    // Keep configured POS shifts authoritative, but place previously unseen
+    // shifts by settlement time so one new shift does not block the whole day.
+    const settleTime = String(bill.settle_time ?? '').slice(11, 16);
+    const period = periodConfigs.find((p) => p.externalShiftId && p.externalShiftId === shiftId)
+      ?? periodConfigs.find((p) => timeMatches(settleTime, p));
+    if (!period) throw new Error(`No business period for POS shift ${shiftId} at ${settleTime || 'unknown time'}`);
     const aggregate = periodMap.get(period.code)!;
     aggregate.cents += billCents;
     for (const item of bill.item ?? []) {

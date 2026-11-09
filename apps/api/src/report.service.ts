@@ -35,7 +35,7 @@ export class DailyReportService {
       this.prisma.salesPeriod.findMany({ where: { storeId: BigInt(storeId), businessDate } }),
       this.prisma.businessPeriod.findMany({ where: { status: true }, orderBy: { sortOrder: 'asc' } }),
       this.prisma.groupBuySale.findMany({ where: { storeId: BigInt(storeId), businessDate }, orderBy: { platformCode: 'asc' } }),
-      this.prisma.productDailySale.findMany({ where: { storeId: BigInt(storeId), businessDate }, include: { product: true, category: true } }),
+      this.prisma.productDailySale.findMany({ where: { storeId: BigInt(storeId), businessDate }, include: { product: { include: { reportCategory: true, reportProduct: { include: { category: true } } } }, category: true } }),
       this.prisma.storeDailyInput.findUnique({ where: { storeId_businessDate: { storeId: BigInt(storeId), businessDate } } }),
       this.prisma.dailyReportState.findUnique({ where: { storeId_businessDate: { storeId: BigInt(storeId), businessDate } } }),
       this.prisma.powerCalculationConfig.findFirst({ where: { OR: [{ storeId: BigInt(storeId) }, { storeId: null }] }, orderBy: { storeId: 'desc' } }),
@@ -56,7 +56,15 @@ export class DailyReportService {
         return (aOrder < 0 ? Number.MAX_SAFE_INTEGER : aOrder) - (bOrder < 0 ? Number.MAX_SAFE_INTEGER : bOrder);
       }).map((p) => ({ code: p.periodCode, name: p.periodName, amount: num(p.salesAmount)!, customers: p.customerCount })),
       platforms: platforms.map((p) => ({ code: p.platformCode, name: p.platformName, amount: num(p.salesAmount)!, customers: p.customerCount })),
-      products: products.map((p) => ({ productId: Number(p.productId), productName: p.product.productName, categoryId: Number(p.categoryId), categoryName: p.category.categoryName, categoryOrder: p.category.sortOrder, quantity: num(p.quantity)!, salesAmount: num(p.salesAmount)! })),
+      products: products.flatMap((p) => {
+        const target = p.product.reportVisible ? p.product : p.product.reportProduct;
+        if (!target?.reportVisible) return [];
+        const category = p.product.reportVisible
+          ? (p.category.reportVisible ? p.category : p.product.reportCategory)
+          : p.product.reportProduct?.category;
+        if (!category?.reportVisible) return [];
+        return [{ productId: Number(target.id), productName: target.productName, categoryId: Number(category.id), categoryName: category.categoryName, categoryOrder: category.sortOrder, quantity: num(p.quantity)!, salesAmount: num(p.salesAmount)! }];
+      }),
       manual: manual && {
         kitchenPower: num(manual.kitchenPower), diningPower: num(manual.diningPower), fullDayPower: num(manual.fullDayPower),
         airConditionPower: num(manual.airConditionPower), totalPower: num(manual.totalPower), waterUsage: num(manual.waterUsage),

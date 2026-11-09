@@ -33,3 +33,30 @@ test('division by zero and incomplete manual data', () => {
   assert.equal(report.status.complete, false);
   assert.equal(report.energy.powerEfficiency, null);
 });
+
+test('entered total power takes precedence over legacy component totals', () => {
+  const report = calculateDailyReport({
+    store: { id: 3, name: '测试店', brandName: '米熊' }, date: '2026-09-27',
+    sales: { total: { amount: 1000, customers: 50 }, dineIn: { amount: 600, customers: 30 }, delivery: { amount: 400, customers: 20 } },
+    periods: [], platforms: [], products: [],
+    manual: { kitchenPower: 20, diningPower: 30, fullDayPower: 40, airConditionPower: 50, totalPower: 120, waterUsage: 2, laborHours: 10, addonCustomers: null, comboCustomers: null, status: 'SUBMITTED' },
+    powerMode: 'SUM_COMPONENTS', reportStatus: 'SUBMITTED', apiDataReady: true, productDataReady: true,
+  });
+  assert.equal(report.energy.totalPower, 120);
+  assert.equal(report.energy.powerEfficiency, 8.33);
+});
+
+test('hidden product sales rolled into a visible product produce one detail row', () => {
+  const report = calculateDailyReport({
+    store: { id: 1, name: '山大店', brandName: '米熊' }, date: '2026-10-08',
+    sales: null, periods: [], platforms: [], manual: null, powerMode: 'SUM_COMPONENTS',
+    reportStatus: 'OPEN', apiDataReady: false, productDataReady: true,
+    products: [
+      { productId: 10, productName: '目标菜品', categoryId: 2, categoryName: '盖饭', categoryOrder: 1, quantity: 5, salesAmount: 50 },
+      { productId: 10, productName: '目标菜品', categoryId: 2, categoryName: '盖饭', categoryOrder: 1, quantity: 2.5, salesAmount: 25 },
+    ],
+  });
+  assert.deepEqual(report.categorySales, [{ categoryId: 2, categoryName: '盖饭', quantity: 7.5 }]);
+  assert.equal(report.productSales[0].items.length, 1);
+  assert.deepEqual(report.productSales[0].items[0], { rank: 1, productId: 10, productName: '目标菜品', quantity: 7.5 });
+});

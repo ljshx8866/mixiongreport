@@ -6,10 +6,13 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE:?Set MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER:?Set MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
+      MYSQL_MIGRATION_PASSWORD: ${MYSQL_MIGRATION_PASSWORD:?Set MYSQL_MIGRATION_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: 127.0.0.1
       TZ: Asia/Shanghai
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./database/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 10s
@@ -25,11 +28,30 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL}
       REPORT_SOURCE: database
+      HR_FEATURES_ENABLED: "true"
+      HR_SENSITIVE_INTAKE_ENABLED: "true"
+      HR_OCR_ENABLED: "true"
+      HR_ONBOARDING_ENABLED: "true"
+      HR_BANK_CHANGE_ENABLED: "true"
+      HR_OFFBOARDING_ENABLED: "true"
+      HR_SALARY_ENABLED: "true"
+      HR_PAY_CALC_ENABLED: "true"
+      HR_REQUIRE_CONFIRMED_LABOR_BEFORE_SUBMIT: ${HR_REQUIRE_CONFIRMED_LABOR_BEFORE_SUBMIT:-false}
+      HR_SCHEDULE_NOTIFY_ENABLED: "true"
+      HR_SCHEDULE_TEMPLATE_ID: ${HR_SCHEDULE_TEMPLATE_ID:-}
+      HR_SCHEDULE_TEMPLATE_FIELDS_JSON: ${HR_SCHEDULE_TEMPLATE_FIELDS_JSON:-}
+      HR_APPROVAL_NOTIFY_ENABLED: "true"
+      HR_APPROVAL_TEMPLATE_ID: ${HR_APPROVAL_TEMPLATE_ID:-y8MwNsRAIxVW7lA2pj6dngYy17wTBV7Csi-HiKdb-yM}
+      HR_DATA_ACTIVE_KEY_ID: ${HR_DATA_ACTIVE_KEY_ID:-}
+      HR_DATA_KEYS_JSON: ${HR_DATA_KEYS_JSON:-}
+      HR_DATA_LOOKUP_KEY: ${HR_DATA_LOOKUP_KEY:-}
+      HR_OCR_CREDENTIAL_ENCRYPTION_KEY: ${HR_OCR_CREDENTIAL_ENCRYPTION_KEY:-}
       API_KEY: ${API_KEY:?Set API_KEY}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
       WECHAT_APP_ID: ${WECHAT_APP_ID:-}
       WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
       SYNC_ENABLED: ${SYNC_ENABLED:-false}
+      FILL_REMINDER_ENABLED: ${FILL_REMINDER_ENABLED:-true}
       POS_CENTER_ID: ${POS_CENTER_ID:-}
       POS_APP_ID: ${POS_APP_ID:-}
       POS_ACCESS_ID: ${POS_ACCESS_ID:-}
@@ -49,6 +71,20 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
+  migrate:
+    image: restaurant-report-api
+    profiles: ["ops"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${MIGRATION_DATABASE_URL:?Set MIGRATION_DATABASE_URL}
+      REPORT_SOURCE: database
+    volumes:
+      - ./database/prisma:/app/database/prisma:ro
+    entrypoint: ["npx", "prisma"]
+    command: ["migrate", "deploy", "--schema", "database/prisma/schema.prisma"]
 
   admin:
     build:

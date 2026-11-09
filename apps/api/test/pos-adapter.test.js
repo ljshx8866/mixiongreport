@@ -2,6 +2,21 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { mapWuuxiangDaily } = require('../dist/pos-adapter');
 
+test('unconfigured POS shift uses settlement time while configured shifts take priority', () => {
+  const periods = [
+    { code: 'LUNCH', name: '午餐', startTime: '00:00', endTime: '16:59', externalShiftId: 'L1' },
+    { code: 'DINNER', name: '晚餐', startTime: '17:00', endTime: '23:59', externalShiftId: 'D1' },
+  ];
+  const bills = [
+    { bs_id: 'early', state: 1, delflg: 0, sale_type_name: '外卖', income_total: 29.62,
+      settle_shift_id: 'UNCONFIGURED', settle_time: '2026-10-10 08:40:51', item: [] },
+    { bs_id: 'mapped', state: 1, delflg: 0, sale_type_name: '堂食', income_total: 10,
+      settle_shift_id: 'D1', settle_time: '2026-10-10 16:07:21', item: [] },
+  ];
+  const report = mapWuuxiangDaily(bills, [], '2026-10-10', periods, 'BOWL');
+  assert.deepEqual(report.periods.map(({ code, amount }) => [code, amount]), [['LUNCH', 29.62], ['DINNER', 10]]);
+});
+
 test('maps POS net income, shift IDs, redeemed tickets and exact product IDs', () => {
   const bills = [
     { bs_id: '1', state: 1, delflg: 0, sale_type_name: '堂食', people_qty: 2, income_total: 3308.56, settle_shift_id: 'L1', settle_time: '2026-09-27 17:30:00', item: [

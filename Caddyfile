@@ -1,5 +1,13 @@
-mx.sxhhg.com.cn {
+mixiong6.com, www.mixiong6.com {
   encode zstd gzip
+
+  header {
+    Strict-Transport-Security "max-age=31536000"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    -Server
+  }
 
   reverse_proxy admin:80
 }

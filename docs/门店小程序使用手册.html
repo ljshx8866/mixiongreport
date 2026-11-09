@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>米熊经营日报｜门店使用手册</title>
+  <style>
+    :root{--ink:#172b46;--muted:#66758a;--orange:#ed5a18;--soft:#fff1e8;--line:#e7ebf0;--bg:#f4f6f9}
+    *{box-sizing:border-box}body{margin:0;background:#dfe4eb;color:var(--ink);font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif}strong{font-weight:750}
+    .page{width:210mm;min-height:297mm;margin:12mm auto;padding:17mm 17mm 14mm;background:white;box-shadow:0 8px 28px #26344d22;position:relative;overflow:hidden;page-break-after:always}
+    .page:last-child{page-break-after:auto}.topline{height:5mm;background:linear-gradient(90deg,var(--orange),#ffbd78);position:absolute;top:0;left:0;right:0}
+    .header{display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--orange)}.header span:last-child{color:#94a0af}
+    h1{font-size:34px;line-height:1.25;margin:20mm 0 4mm;letter-spacing:.03em}h2{font-size:25px;line-height:1.3;margin:6mm 0 2mm}h3{font-size:16px;margin:0 0 8px}.lead{font-size:14px;color:var(--muted);line-height:1.8;margin:0}
+    .rule{height:1px;background:var(--line);margin:7mm 0}.section-head{display:flex;align-items:center;gap:10px;margin-bottom:5mm}.num{width:29px;height:29px;display:grid;place-items:center;border-radius:50%;background:var(--orange);color:#fff;font-size:15px;font-weight:800}.section-head h2{margin:0}
+    .flow{display:flex;align-items:center;gap:7px;margin:9mm 0}.flow b{background:var(--soft);color:#b94a16;border-radius:9px;padding:10px 12px;font-size:12px;white-space:nowrap}.flow em{color:#c3cbd5;font-size:20px;font-style:normal}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:8mm;align-items:start}.three{display:grid;grid-template-columns:repeat(3,1fr);gap:5mm}.steps{margin:0;padding:0;list-style:none}.steps li{display:flex;gap:9px;margin:0 0 13px;font-size:13px;line-height:1.55}.steps .dot{flex:none;width:23px;height:23px;border-radius:7px;background:var(--soft);color:var(--orange);font-weight:800;text-align:center;line-height:23px}.note{background:#fff6ec;border-left:3px solid #f7a34b;border-radius:7px;padding:10px 12px;color:#79512a;font-size:11px;line-height:1.6}.ok{background:#ecf8f3;border-left-color:#42a785;color:#316f5b}.small{font-size:11px;color:var(--muted);line-height:1.6}.caption{text-align:center;color:#8b98aa;font-size:10px;margin-top:8px}
+    .phone{width:100%;max-width:246px;margin:auto;border:5px solid #1e2d42;border-radius:27px;background:var(--bg);padding:11px 10px 12px;box-shadow:0 12px 24px #26344d20;min-height:390px;position:relative}.phone.tall{min-height:475px}.phone:before{content:"";display:block;width:55px;height:9px;border-radius:0 0 8px 8px;background:#1e2d42;margin:-11px auto 12px}.phonebar{text-align:center;font-size:12px;font-weight:700;margin:2px 0 12px}.mock-hero{background:var(--ink);border-radius:15px;color:white;padding:15px}.mock-hero .eyebrow{font-size:9px;color:#aabbd0}.mock-hero .name{font-size:20px;font-weight:800;margin:6px 0}.mock-hero .amount{font-size:24px;font-weight:800;margin:14px 0 7px}.mock-card{background:white;border-radius:12px;padding:11px;margin:9px 0;box-shadow:0 3px 9px #26344d09;font-size:10px}.mock-card strong{font-size:12px}.mock-label{font-size:9px;color:#8a97a8}.mock-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0}.mock-row+.mock-row{border-top:1px solid #edf0f4;padding-top:7px}.mock-button{background:var(--orange);color:#fff;border-radius:9px;padding:9px 6px;font-size:11px;font-weight:750;text-align:center;margin:8px 0}.mock-button.dark{background:var(--ink)}.mock-button.outline{background:white;border:1px solid #eaa580;color:#c9571f}.mock-input{border:1px solid #e4e9ef;border-radius:8px;background:#fff;color:#9aa5b3;padding:8px;font-size:10px;margin:5px 0 9px}.mock-tabs{display:flex;justify-content:space-around;background:white;border-radius:8px;padding:9px 4px;margin-top:12px;color:#97a1ae;font-size:10px}.mock-tabs .active{color:var(--orange);font-weight:800}.pill{background:#e8f7f0;color:#269269;border-radius:10px;padding:3px 6px;font-size:9px}.pill.wait{background:#fff1e9;color:#d95d20}.two-inputs{display:grid;grid-template-columns:1fr 1fr;gap:5px}.two-inputs .mock-input{margin:2px 0 5px}.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:9px;padding:6px}.calendar span{padding:4px 0}.calendar .selected{background:var(--orange);border-radius:50%;color:#fff}.calendar .muted{color:#c3ccd7}
+    .callout{display:inline-flex;align-items:center;gap:5px;background:#fff0e4;color:#b94c16;font-size:10px;font-weight:800;border-radius:12px;padding:4px 7px}.badge{width:18px;height:18px;display:inline-grid;place-items:center;border-radius:50%;background:var(--orange);color:#fff;font-size:10px;font-weight:800}.footer{position:absolute;bottom:9mm;left:17mm;right:17mm;border-top:1px solid var(--line);padding-top:4mm;display:flex;justify-content:space-between;color:#9aa5b4;font-size:10px}.faq{padding:11px 0;border-bottom:1px solid var(--line)}.faq b{font-size:12px}.faq p{font-size:11px;line-height:1.6;color:var(--muted);margin:5px 0 0}.checklist{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.checklist div{background:#f6f8fb;border-radius:9px;padding:10px 12px;font-size:11px}.checklist b{color:var(--orange)}
+    .page:nth-of-type(2)>.section-head{margin-top:4mm!important;margin-bottom:3mm}.page:nth-of-type(2)>.rule{margin:3mm 0}.page:first-of-type>.lead{max-width:116mm}.entry-code{position:absolute;top:34mm;right:17mm;width:43mm;text-align:center}.entry-code img{display:block;width:41mm;height:41mm;object-fit:contain;margin:auto}.entry-code span{display:block;font-size:11px;font-weight:700;color:var(--orange);margin-top:2mm}
+    @media print{body{background:white}.page{margin:0;box-shadow:none;min-height:297mm}@page{size:A4;margin:0}}
+  </style>
+</head>
+<body>
+  <section class="page">
+    <div class="topline"></div><div class="header"><span>米熊 · 每日经营</span><span>门店使用手册 / V1.0</span></div>
+    <h1>经营日报小程序<br>门店使用手册</h1>
+    <p class="lead">每天只需完成一次填报。营业和菜品数据由系统获取，门店补充用电、用水与工时，即可查看和分享经营日报。</p>
+    <div class="entry-code"><img src="miniapp-entry-code.jpg" alt="米熊经营日报小程序正式版入口码"><span>扫码进入小程序</span></div>
+    <div class="flow"><b>登录</b><em>›</em><b>核对所属门店</b><em>›</em><b>填报 5 项</b><em>›</em><b>查看 / 分享日报</b></div>
+    <div class="rule"></div>
+    <div class="section-head"><span class="num">1</span><h2>登录账号</h2></div>
+    <div class="two">
+      <div><ol class="steps"><li><span class="dot">1</span><span>用微信扫描首页二维码，打开小程序，点底部 <strong>我的</strong>。</span></li><li><span class="dot">2</span><span>点 <strong>手机号快捷登录</strong>，按提示验证手机号。</span></li><li><span class="dot">3</span><span>验证未成功时，点 <strong>改用用户名密码登录</strong>，输入账号手机号和密码。</span></li></ol><div class="note"><strong>登录手机号就是天财商龙后台账户登记的手机号。</strong>号码不一致时无法匹配门店账号。登录后可在“我的”开启填报提醒。</div></div>
+      <div><div class="phone"><div class="phonebar">我的</div><div class="mock-card" style="padding:18px 12px"><div class="mock-label">WELCOME TO MIXIONG</div><h3 style="margin:5px 0">手机号快捷登录</h3><p class="small" style="margin:0">验证手机号后匹配门店账号</p><div class="mock-button">手机号快捷登录</div><div style="text-align:center;color:#dc5c1d;font-size:10px">改用用户名密码登录</div></div><div class="mock-tabs"><span>首页</span><span>日报</span><span class="active">我的</span></div></div><div class="caption">页面示意｜登录入口在“我的”</div></div>
+    </div>
+    <div class="footer"><span>给门店员工看的操作说明 · 页面为示意图</span><span>01 / 04</span></div>
+  </section>
+
+  <section class="page">
+    <div class="topline"></div><div class="header"><span>米熊 · 每日经营</span><span>门店使用手册</span></div>
+    <div class="section-head" style="margin-top:8mm"><span class="num">2</span><h2>进入所属门店并完成填报</h2></div>
+    <div class="two">
+      <div><h3>先确认门店</h3><ol class="steps"><li><span class="dot">1</span><span>登录后进入底部 <strong>首页</strong>，系统会显示本人所属门店。</span></li><li><span class="dot">2</span><span>核对门店名称、日期，点 <strong>立即填写</strong>。</span></li></ol><div class="note">每位填报人员只对应一个门店。若首页门店名称有误，请联系管理人员核对账号。</div></div>
+      <div><div class="phone" style="min-height:295px"><div class="phonebar">经营日报</div><div class="mock-hero"><div class="eyebrow">米熊 · 每日经营</div><div class="name">山大店</div><div style="font-size:10px;color:#c8d5e3">2026-09-27 · 所属门店</div><div class="amount">¥ 5,644.74</div><div style="font-size:10px;color:#c8d5e3">总入客 389　　客单价 ¥14.51</div></div><div class="mock-card"><div class="mock-row"><strong>门店每日填报</strong><span class="pill wait">待填写</span></div></div><div class="mock-button">立即填写</div><div class="mock-tabs"><span class="active">首页</span><span>日报</span><span>我的</span></div></div><div class="caption">页面示意｜核对所属门店后进入填报</div></div>
+    </div>
+    <div class="rule"></div>
+    <div class="section-head"><span class="num">3</span><h2>填写当天 5 项数据</h2></div>
+    <div class="two">
+      <div><ol class="steps"><li><span class="dot">1</span><span>填写 <strong>用电度数、厨房用电、前厅用电、用水吨数、工时数量</strong>。这 5 项均为必填。</span></li><li><span class="dot">2</span><span>有需要说明的情况，可填写 <strong>备注</strong>。</span></li><li><span class="dot">3</span><span>暂时没填完点 <strong>保存草稿</strong>；确认无误后点 <strong>提交日报</strong>。</span></li></ol><div class="note ok">提交后首页会显示“已提交”。提交后表单通常不能直接修改；如发现数据填错，请联系管理人员处理。</div></div>
+      <div><div class="phone" style="min-height:340px"><div class="phonebar">每日填报</div><div class="mock-row"><strong>每日经营填报</strong><span class="pill wait">草稿</span></div><div class="mock-card"><strong>能源与人工数据</strong><div class="two-inputs" style="margin-top:8px"><div><div class="mock-label">用电度数 *</div><div class="mock-input">276.4 度</div></div><div><div class="mock-label">厨房用电 *</div><div class="mock-input">207.7 度</div></div><div><div class="mock-label">前厅用电 *</div><div class="mock-input">40.41 度</div></div><div><div class="mock-label">用水吨数 *</div><div class="mock-input">2 吨</div></div></div><div class="mock-label">工时数量 *</div><div class="mock-input">55 小时</div><div class="mock-label">备注（选填）</div><div class="mock-input">需要说明的情况</div></div><div style="display:flex;gap:6px"><div class="mock-button outline" style="flex:1">保存草稿</div><div class="mock-button" style="flex:1">提交日报</div></div></div><div class="caption">页面示意｜数据仅供说明，不代表当日实际值</div></div>
+    </div>
+    <div class="footer"><span>营业额、入客数和菜品销量无需手填</span><span>02 / 04</span></div>
+  </section>
+
+  <section class="page">
+    <div class="topline"></div><div class="header"><span>米熊 · 每日经营</span><span>门店使用手册</span></div>
+    <div class="section-head" style="margin-top:8mm"><span class="num">4</span><h2>查看日报与历史日期</h2></div>
+    <div class="two">
+      <div><ol class="steps"><li><span class="dot">1</span><span>在 <strong>首页</strong>点“今日经营日报”，查看当天销售、时段、团购、效率和菜品明细。</span></li><li><span class="dot">2</span><span>看往日数据：点底部 <strong>日报</strong>，在日历中选日期，再点 <strong>查看日报</strong>。</span></li></ol><div class="note">页面提示“日报数据尚未完整”时，先确认门店是否已提交填报；经营或菜品数据也可能尚在同步。</div></div>
+      <div><div class="phone" style="min-height:320px"><div class="phonebar">历史日报</div><div class="mock-card"><strong>历史经营日报</strong><div class="mock-row" style="margin-top:12px"><span>‹</span><strong>2026 年 9 月</strong><span>›</span></div><div class="calendar"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span class="muted">·</span><span class="muted">·</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span class="selected">27</span></div></div><div class="mock-card mock-row"><span>已选择营业日期<br><strong>2026-09-27</strong></span><span class="pill wait">查看日报 ›</span></div><div class="mock-tabs"><span>首页</span><span class="active">日报</span><span>我的</span></div></div><div class="caption">页面示意｜底部“日报”进入日期选择</div></div>
+    </div>
+    <div class="rule"></div>
+    <div class="section-head"><span class="num">5</span><h2>生成并转发简报图片</h2></div>
+    <div class="two">
+      <div><ol class="steps"><li><span class="dot">1</span><span>打开某一天的经营日报，点顶部 <strong>生成简报图片</strong>。</span></li><li><span class="dot">2</span><span>等待图片生成后，点 <strong>转发图片</strong>，选择接收人或门店群。</span></li><li><span class="dot">3</span><span>也可以点 <strong>保存图片</strong>，存入手机相册后再发送。</span></li></ol><div class="note">简报图片会使用当前日报数据。发送前请核对门店、日期和关键数据。</div></div>
+      <div><div class="phone" style="min-height:275px"><div class="phonebar">经营日报简报</div><div class="mock-card" style="border:1px solid #ebedf1;padding:0;overflow:hidden"><div style="text-align:center;padding:12px;font-size:13px;font-weight:800">米熊（山大店）日报</div><div style="background:#f5ae7e;text-align:center;padding:8px;font-size:10px">销售统计　·　时段统计</div><div style="background:#ffe183;padding:9px;text-align:center;font-size:10px">能源效率　·　工时效率</div><div style="background:#afe8e5;padding:9px;text-align:center;font-size:10px">菜品销售明细</div></div><div style="display:flex;gap:6px"><div class="mock-button outline" style="flex:1">保存图片</div><div class="mock-button" style="flex:1">转发图片</div></div></div><div class="caption">页面示意｜实际图片内容以当日报表为准</div></div>
+    </div>
+    <div class="footer"><span>分享前确认门店与日期</span><span>03 / 04</span></div>
+  </section>
+
+  <section class="page">
+    <div class="topline"></div><div class="header"><span>米熊 · 每日经营</span><span>门店使用手册</span></div>
+    <div class="section-head" style="margin-top:8mm"><span class="num">6</span><h2>填报提醒与转派</h2></div>
+    <div class="two">
+      <div><ol class="steps"><li><span class="dot">1</span><span>登录后到 <strong>我的 → 开启填报提醒</strong>，按提示允许订阅消息。</span></li><li><span class="dot">2</span><span>收到填报提醒后，点击消息可进入填报；在填报页完成当天数据。</span></li><li><span class="dot">3</span><span>如果需要由同门店其他人员处理，点 <strong>顺位提醒</strong>，或选择同门店人员后点 <strong>指定转派</strong>。</span></li></ol><div class="note">当天已提交填报时，不再发送当天待填报提醒。转派入口仅在有待处理提醒时显示。</div></div>
+      <div><div class="phone" style="min-height:290px"><div class="phonebar">每日填报</div><div class="mock-card"><strong>收到填报提醒</strong><p class="small" style="margin:5px 0">可直接完成填报，或转派给同门店人员。</p><div class="mock-button outline">顺位提醒</div><div class="mock-input">选择转派人员　⌄</div><div class="mock-button">指定转派</div></div><div class="mock-card"><strong>能源与人工数据</strong><div class="mock-label" style="margin-top:9px">填写当天 5 项必填数据</div></div></div><div class="caption">页面示意｜收到待处理提醒时显示转派入口</div></div>
+    </div>
+    <div class="rule"></div>
+    <h2 style="margin-bottom:4mm">常见问题</h2>
+    <div class="faq"><b>登录后看不到门店，或门店名称不对？</b><p>先确认登录手机号与天财商龙后台账户登记的手机号一致；仍有问题时联系管理人员核对账号。</p></div>
+    <div class="faq"><b>提交按钮无法使用，或提示填写必填项？</b><p>检查用电度数、厨房用电、前厅用电、用水吨数、工时数量是否都已填写，且不能输入负数。</p></div>
+    <div class="faq"><b>日报中的某些数字显示“—”？</b><p>先看页面的完整性提示；可能是当天数据尚未同步、尚未填报，或该指标没有可计算的数据。</p></div>
+    <div class="faq"><b>没有收到提醒？</b><p>在“我的”检查是否已开启填报提醒；订阅消息需按页面提示授权。当天已完成填报则不会再提醒。</p></div>
+    <div class="rule"></div>
+    <div class="checklist"><div><b>每天先核对</b><br>门店名称 · 营业日期</div><div><b>每天结束前</b><br>填写 5 项 · 点击提交日报</div></div>
+    <div class="footer"><span>米熊经营日报 · 门店员工使用</span><span>04 / 04</span></div>
+  </section>
+</body>
+</html>

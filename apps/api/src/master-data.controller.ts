@@ -44,7 +44,7 @@ export class MasterDataController {
   }
   @Get('categories') async categories() {
     return (await this.db.productCategory.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] })).map((c) => ({
-      id: Number(c.id), categoryCode: c.categoryCode, categoryName: c.categoryName, brandCode: c.brandCode, sortOrder: c.sortOrder, status: c.status,
+      id: Number(c.id), categoryCode: c.categoryCode, categoryName: c.categoryName, brandCode: c.brandCode, sortOrder: c.sortOrder, status: c.status, reportVisible: c.reportVisible,
     }));
   }
   @Post('categories') async createCategory(@Body() body: Record<string, unknown>) {
@@ -56,18 +56,32 @@ export class MasterDataController {
     return { id: Number(c.id) };
   }
   @Patch('categories/:id') async updateCategory(@Param('id', ParseIntPipe) categoryId: number, @Body() body: Record<string, unknown>) {
+    if (body.reportVisible === false) {
+      const targetCount = await this.db.product.count({ where: {
+        categoryId: id(categoryId), reportVisible: true,
+        reportSources: { some: { reportVisible: false } },
+      } });
+      if (targetCount) throw new BadRequestException('This category contains roll-up target products; move those roll-ups before hiding it');
+    }
     const c = await this.db.productCategory.update({ where: { id: id(categoryId) }, data: {
       ...(body.categoryName !== undefined && { categoryName: required(body.categoryName, 'categoryName') }),
       ...(body.sortOrder !== undefined && { sortOrder: Number(body.sortOrder) }),
       ...(body.status !== undefined && { status: Boolean(body.status) }),
+      ...(body.reportVisible !== undefined && { reportVisible: Boolean(body.reportVisible) }),
     } });
     return { id: Number(c.id) };
   }
   @Get('products') async products() {
-    return (await this.db.product.findMany({ orderBy: { id: 'asc' } })).map((p) => ({
+    return (await this.db.product.findMany({ orderBy: { id: 'asc' }, include: { category: true, reportCategory: true, reportProduct: true } })).map((p) => ({
       id: Number(p.id), externalProductCode: p.externalProductCode, productName: p.productName,
       categoryId: Number(p.categoryId), salePrice: p.salePrice?.toNumber() ?? null,
-      theoreticalCost: p.theoreticalCost?.toNumber() ?? null, status: p.status,
+      theoreticalCost: p.theoreticalCost?.toNumber() ?? null, status: p.status, isPackage: p.isPackage,
+      reportCategoryId: p.reportCategoryId == null ? null : Number(p.reportCategoryId),
+      reportCategoryName: p.reportCategory?.categoryName ?? null,
+      categoryReportVisible: p.category.reportVisible,
+      reportVisible: p.reportVisible,
+      reportProductId: p.reportProductId == null ? null : Number(p.reportProductId),
+      reportProductName: p.reportProduct?.productName ?? null,
     }));
   }
   @Post('products') async createProduct(@Body() body: Record<string, unknown>) {
@@ -81,12 +95,35 @@ export class MasterDataController {
   @Patch('products/:id') async updateProduct(@Param('id', ParseIntPipe) productId: number, @Body() body: Record<string, unknown>) {
     if (body.categoryId !== undefined && process.env.POS_ADAPTER === 'wuuxiang')
       throw new BadRequestException('Product category is managed by the POS API');
-    const p = await this.db.product.update({ where: { id: id(productId) }, data: {
+    const product = await this.db.product.findUniqueOrThrow({ where: { id: id(productId) }, include: { category: true } });
+    if (body.reportCategoryId !== undefined) throw new BadRequestException('Category roll-up is deprecated; select a target product');
+    if (body.reportVisible !== undefined && typeof body.reportVisible !== 'boolean')
+      throw new BadRequestException('reportVisible must be a boolean');
+    const reportVisible = body.reportVisible === undefined ? product.reportVisible : body.reportVisible;
+    if (body.reportVisible === false && product.reportVisible) {
+      const sourceCount = await this.db.product.count({ where: { reportProductId: product.id, reportVisible: false } });
+      if (sourceCount) throw new BadRequestException('This product receives roll-up sales; move those sources before hiding it');
+    }
+    let reportProductId: bigint | null | undefined;
+    if (body.reportProductId !== undefined) {
+      reportProductId = body.reportProductId === null ? null : id(Number(body.reportProductId));
+      if (reportProductId !== null) {
+        if (reportVisible) throw new BadRequestException('Hide the source product before selecting a roll-up target');
+        if (reportProductId === product.id) throw new BadRequestException('A product cannot roll up into itself');
+        const target = await this.db.product.findUnique({ where: { id: reportProductId }, include: { category: true } });
+        if (!target?.reportVisible || !target.category.reportVisible)
+          throw new BadRequestException('Roll-up target must be a visible product in a visible category');
+      }
+    }
+    const p = await this.db.product.update({ where: { id: product.id }, data: {
       ...(body.productName !== undefined && { productName: required(body.productName, 'productName') }),
       ...(body.categoryId !== undefined && { categoryId: id(Number(body.categoryId)) }),
       ...(body.salePrice !== undefined && { salePrice: money(body.salePrice) }),
       ...(body.theoreticalCost !== undefined && { theoreticalCost: money(body.theoreticalCost) }),
       ...(body.status !== undefined && { status: Boolean(body.status) }),
+      ...(body.reportVisible !== undefined && { reportVisible }),
+      ...(reportProductId !== undefined && { reportProductId }),
+      ...(reportVisible && product.reportProductId !== null && { reportProductId: null }),
     } });
     return { id: Number(p.id) };
   }

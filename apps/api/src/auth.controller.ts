@@ -1,5 +1,5 @@
-import { BadRequestException, Body, Controller, Get, Post, Req } from '@nestjs/common';
-import { AuthService, Public, authUser } from './auth';
+import { BadRequestException, Body, Controller, Get, Post, Req, UnauthorizedException } from '@nestjs/common';
+import { AuthService, Public, authUser, type RequestWithUser } from './auth';
 import { PrismaService } from './prisma.service';
 import { UserRole } from '@prisma/client';
 
@@ -26,12 +26,34 @@ export class AuthController {
     );
   }
 
+  @Public()
+  @Post('wechat-phone') wechatPhone(@Body() body: Record<string, unknown>) {
+    return this.auth.wechatPhoneLogin(text(body.code, 'code'), text(body.phoneCode, 'phoneCode'));
+  }
+
   // Requires the existing server API key and is available only before the first administrator exists.
   @Post('bootstrap') bootstrap(@Body() body: Record<string, unknown>) {
     return this.auth.bootstrap(text(body.name, 'name'), text(body.mobile, 'mobile'), text(body.password, 'password'));
   }
 
-  @Get('me') me(@Req() request: { user?: unknown }) { return authUser(request as never); }
+  @Get('me') async me(@Req() request: RequestWithUser) {
+    const current = authUser(request);
+    if (!current?.id) return current;
+    const account = await this.db.user.findUnique({ where: { id: BigInt(current.id) }, select: {
+      id: true, name: true, mobile: true, role: true, openid: true, status: true, source: true,
+      stores: { select: { storeId: true } },
+    } });
+    if (!account?.status) throw new UnauthorizedException('User is unavailable');
+    return { id: Number(account.id), name: account.name, mobile: account.mobile, role: account.role, source: account.source,
+      storeIds: account.stores.map((store) => Number(store.storeId)), wechatBound: !!account.openid,
+      ...(current.mustChangePassword ? { mustChangePassword: true } : {}) };
+  }
+
+  @Post('change-password') changePassword(@Req() request: { user?: unknown }, @Body() body: Record<string, unknown>) {
+    const user = authUser(request as never);
+    if (!user?.id) throw new BadRequestException('User is required');
+    return this.auth.changePassword(user.id, text(body.currentPassword, 'currentPassword'), text(body.newPassword, 'newPassword'));
+  }
 
   @Get('stores') async stores(@Req() request: { user?: unknown }) {
     const user = authUser(request as never);

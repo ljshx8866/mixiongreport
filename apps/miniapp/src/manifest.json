@@ -2,8 +2,8 @@
   "name": "米熊经营日报",
   "appid": "__UNI__RESTAURANT_REPORT",
   "description": "连锁餐饮门店经营日报",
-  "versionName": "1.2.0",
-  "versionCode": "100",
+  "versionName": "2.1.96",
+  "versionCode": "303",
   "transformPx": false,
   "mp-weixin": {
     "appid": "wxac6bc490e2220ecf",

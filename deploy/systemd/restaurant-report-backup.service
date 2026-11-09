@@ -1,0 +1,13 @@
+[Unit]
+Description=Create and verify a compressed Restaurant Report MySQL backup
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/restaurant-report
+ExecStart=/usr/bin/bash /opt/restaurant-report/scripts/backup-mysql.sh
+TimeoutStartSec=6h
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

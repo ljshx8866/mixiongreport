@@ -11,45 +11,881 @@ model Region {
   id     BigInt  @id @default(autoincrement())
   name   String  @db.VarChar(100)
   stores Store[]
+
+  // Region remains operating-system reporting metadata; account store access is defined by UserStore.
   @@map("regions")
 }
 
 model Store {
-  id                BigInt             @id @default(autoincrement())
-  storeCode         String             @unique @map("store_code") @db.VarChar(50)
-  storeName         String             @map("store_name") @db.VarChar(100)
-  brandName         String             @default("米熊") @map("brand_name") @db.VarChar(100)
-  regionId          BigInt?            @map("region_id")
-  region            Region?            @relation(fields: [regionId], references: [id])
-  externalStoreCode String?            @unique @map("external_store_code") @db.VarChar(100)
-  status            Boolean            @default(true)
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
-  users             UserStore[]
-  sales             DailySale[]
-  periods           SalesPeriod[]
-  groupBuy          GroupBuySale[]
-  products          ProductDailySale[]
-  inputs            StoreDailyInput[]
-  reportStates      DailyReportState[]
-  syncLogs          ApiSyncLog[]
+  id                       BigInt                    @id @default(autoincrement())
+  storeCode                String                    @unique @map("store_code") @db.VarChar(50)
+  storeName                String                    @map("store_name") @db.VarChar(100)
+  brandName                String                    @default("米熊") @map("brand_name") @db.VarChar(100)
+  regionId                 BigInt?                   @map("region_id")
+  region                   Region?                   @relation(fields: [regionId], references: [id])
+  externalStoreCode        String?                   @unique @map("external_store_code") @db.VarChar(100)
+  status                   Boolean                   @default(true)
+  createdAt                DateTime                  @default(now()) @map("created_at")
+  updatedAt                DateTime                  @updatedAt @map("updated_at")
+  users                    UserStore[]
+  sales                    DailySale[]
+  periods                  SalesPeriod[]
+  groupBuy                 GroupBuySale[]
+  products                 ProductDailySale[]
+  inputs                   StoreDailyInput[]
+  reportStates             DailyReportState[]
+  syncLogs                 ApiSyncLog[]
+  hrPrimaryAppointments    HrPrimaryAppointment[]
+  hrInitialEmployees       HrEmployee[]              @relation("HrEmployeeInitialStore")
+  hrJobPositionStores      HrJobPositionStore[]
+  hrOnboardingIntakeDrafts HrOnboardingIntakeDraft[]
+  hrOnboardingRequests     HrOnboardingRequest[]
+  hrBankChangeRequests     HrBankChangeRequest[]
+  hrOffboardingRequests    HrOffboardingRequest[]
+  hrSalaryChanges          HrSalaryChangeRequest[]
+  hrSchedules              HrSchedule[]
+  hrShiftTemplates         HrShiftTemplate[]
+  hrSchedulePoints         HrSchedulePoint[]
+  hrWorkRecords            HrWorkRecord[]
+  hrMonthlyReviews         HrMonthlyReview[]
+  hrTransfersOut           HrTransferRequest[]       @relation("HrTransferSourceStore")
+  hrTransfersIn            HrTransferRequest[]       @relation("HrTransferDestinationStore")
+
   @@map("stores")
 }
 
 model User {
-  id        BigInt      @id @default(autoincrement())
-  name      String      @db.VarChar(100)
-  mobile    String?     @unique @db.VarChar(30)
-  openid    String?     @unique @db.VarChar(100)
-  passwordHash String?  @map("password_hash") @db.VarChar(255)
-  role      UserRole
-  status    Boolean     @default(true)
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
-  stores    UserStore[]
-  inputs    StoreDailyInput[]
-  audits    AuditLog[]
+  id                       BigInt                     @id @default(autoincrement())
+  name                     String                     @db.VarChar(100)
+  mobile                   String?                    @unique @db.VarChar(30)
+  openid                   String?                    @unique @db.VarChar(100)
+  passwordHash             String?                    @map("password_hash") @db.VarChar(255)
+  role                     UserRole
+  localRoleOverride        Boolean                    @default(false) @map("local_role_override")
+  homeFavoriteModules      Json?                      @map("home_favorite_modules")
+  notificationPreferences  Json?                      @map("notification_preferences")
+  status                   Boolean                    @default(true)
+  source                   UserSource                 @default(LOCAL)
+  externalUserId           String?                    @unique @map("external_user_id") @db.VarChar(100)
+  externalUserCode         String?                    @unique @map("external_user_code") @db.VarChar(100)
+  externalDutyName         String?                    @map("external_duty_name") @db.VarChar(100)
+  lastSyncedAt             DateTime?                  @map("last_synced_at")
+  createdAt                DateTime                   @default(now()) @map("created_at")
+  updatedAt                DateTime                   @updatedAt @map("updated_at")
+  stores                   UserStore[]
+  inputs                   StoreDailyInput[]
+  audits                   AuditLog[]
+  hrEmployee               HrEmployee?
+  hrRoleGrants             HrRoleGrant[]
+  hrSensitiveDrafts        HrSensitiveDraftRevision[]
+  hrOnboardingIntakeDrafts HrOnboardingIntakeDraft[]
+  notifications            UserNotification[]
+
   @@map("users")
+}
+
+model SystemSetting {
+  key       String   @id @db.VarChar(100)
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+// Account-scoped in-app inbox. These durable records are separate from the
+// WeChat template-message outbox and carry their own read state.
+model UserNotification {
+  id        BigInt    @id @default(autoincrement())
+  userId    BigInt    @map("user_id")
+  category  String    @db.VarChar(30)
+  title     String    @db.VarChar(120)
+  summary   String    @db.VarChar(300)
+  page      String    @db.VarChar(200)
+  eventKey  String    @map("event_key") @db.VarChar(191)
+  createdAt DateTime  @default(now()) @map("created_at")
+  readAt    DateTime? @map("read_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventKey], map: "user_notifications_user_event_uq")
+  @@index([userId, readAt, createdAt], map: "user_notifications_user_read_created_idx")
+  @@map("user_notifications")
+}
+
+// HR employee identity is separate from the POS-synchronised login account.
+// A draft cannot receive active assignments or confirmed work by itself.
+model HrEmployee {
+  id                  BigInt                     @id @default(autoincrement())
+  displayName         String                     @map("display_name") @db.VarChar(100)
+  status              HrEmployeeStatus           @default(DRAFT)
+  initialStoreId      BigInt?                    @map("initial_store_id")
+  trialStartedAt      DateTime?                  @map("trial_started_at") @db.Date
+  trialEndedAt        DateTime?                  @map("trial_ended_at")
+  jobPositionId       BigInt?                    @map("job_position_id")
+  userId              BigInt?                    @unique @map("user_id")
+  user                User?                      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  initialStore        Store?                     @relation("HrEmployeeInitialStore", fields: [initialStoreId], references: [id])
+  jobPosition         HrJobPosition?             @relation(fields: [jobPositionId], references: [id], onDelete: SetNull)
+  createdAt           DateTime                   @default(now()) @map("created_at")
+  updatedAt           DateTime                   @updatedAt @map("updated_at")
+  primaryAppointments HrPrimaryAppointment[]
+  transfers           HrTransferRequest[]
+  schedules           HrSchedule[]
+  workRecords         HrWorkRecord[]
+  sensitiveDrafts     HrSensitiveDraftRevision[]
+  bankAccountVersions HrBankAccountVersion[]
+  identityClaim       HrIdentityClaim?
+  onboardingRequests  HrOnboardingRequest[]
+  bankChangeRequests  HrBankChangeRequest[]
+  offboardingRequests HrOffboardingRequest[]
+  salaryRates         HrSalaryRate[]
+  salaryChanges       HrSalaryChangeRequest[]
+
+  @@index([initialStoreId, status])
+  @@index([jobPositionId])
+  @@map("hr_employees")
+}
+
+// A position is reusable across stores; store-specific hourly rates are kept in
+// the association so stores can share job titles without duplicate positions.
+model HrJobPosition {
+  id                 BigInt                @id @default(autoincrement())
+  name               String                @db.VarChar(100)
+  scheduleOnly       Boolean               @default(false) @map("schedule_only")
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
+  stores             HrJobPositionStore[]
+  onboardingRequests HrOnboardingRequest[]
+  employees          HrEmployee[]
+
+  @@unique([name])
+  @@map("hr_job_positions")
+}
+
+model HrJobPositionStore {
+  jobPositionId BigInt        @map("job_position_id")
+  storeId       BigInt        @map("store_id")
+  hourlyRate    Decimal?      @map("hourly_rate") @db.Decimal(12, 2)
+  enabled       Boolean       @default(true)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  jobPosition   HrJobPosition @relation(fields: [jobPositionId], references: [id], onDelete: Cascade)
+  store         Store         @relation(fields: [storeId], references: [id], onDelete: Restrict)
+
+  @@id([jobPositionId, storeId])
+  @@index([storeId, enabled])
+  @@map("hr_job_position_stores")
+}
+
+// A temporary pre-submission form is encrypted and scoped to the submitting user and store.
+model HrOnboardingIntakeDraft {
+  id            BigInt   @id @default(autoincrement())
+  actorId       BigInt   @map("actor_id")
+  storeId       BigInt   @map("store_id")
+  sealedPayload Json     @map("sealed_payload")
+  expiresAt     DateTime @map("expires_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  actor         User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([actorId, storeId])
+  @@index([expiresAt])
+  @@index([storeId])
+  @@map("hr_onboarding_intake_drafts")
+}
+
+enum HrSensitiveDraftKind {
+  IDENTITY
+  BANK
+}
+
+// Append-only encrypted structured drafts. Images are never stored here.
+model HrSensitiveDraftRevision {
+  id                 BigInt                @id @default(autoincrement())
+  employeeId         BigInt                @map("employee_id")
+  kind               HrSensitiveDraftKind
+  version            Int
+  sealedPayload      Json                  @map("sealed_payload")
+  maskedValue        String                @map("masked_value") @db.VarChar(32)
+  source             String                @db.VarChar(30)
+  providerRef        String?               @map("provider_ref") @db.VarChar(100)
+  createdBy          BigInt?               @map("created_by")
+  createdAt          DateTime              @default(now()) @map("created_at")
+  employee           HrEmployee            @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  actor              User?                 @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  bankAccountVersion HrBankAccountVersion?
+  bankChangeRequests HrBankChangeRequest[]
+
+  @@unique([employeeId, kind, version])
+  @@index([employeeId, kind, createdAt])
+  @@map("hr_sensitive_draft_revisions")
+}
+
+// Only one current employee may claim an identity number. The HMAC key is separate from encryption keys.
+model HrIdentityClaim {
+  employeeId  BigInt     @id @map("employee_id")
+  fingerprint String     @unique @db.Char(64)
+  version     Int
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  employee    HrEmployee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+
+  @@map("hr_identity_claims")
+}
+
+enum HrEmployeeStatus {
+  DRAFT
+  TRIAL
+  TRIAL_ENDED
+  ACTIVE
+  TERMINATED
+}
+
+model HrSchedule {
+  id              BigInt               @id @default(autoincrement())
+  employeeId      BigInt               @map("employee_id")
+  storeId         BigInt               @map("store_id")
+  shiftTemplateId BigInt?              @map("shift_template_id")
+  pointId         BigInt?              @map("point_id")
+  pointName       String?              @map("point_name") @db.VarChar(80)
+  businessDate    DateTime             @map("business_date") @db.Date
+  status          HrScheduleStatus     @default(DRAFT)
+  currentVersion  Int                  @default(1) @map("current_version")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  employee        HrEmployee           @relation(fields: [employeeId], references: [id])
+  store           Store                @relation(fields: [storeId], references: [id])
+  shiftTemplate   HrShiftTemplate?     @relation(fields: [shiftTemplateId], references: [id], onDelete: SetNull)
+  point           HrSchedulePoint?     @relation(fields: [pointId], references: [id], onDelete: SetNull)
+  versions        HrScheduleVersion[]
+  deliveries      HrScheduleDelivery[]
+  workRecord      HrWorkRecord?
+
+  @@index([storeId, businessDate, status])
+  @@index([employeeId, businessDate])
+  @@index([shiftTemplateId])
+  @@index([pointId])
+  @@map("hr_schedules")
+}
+
+// Reusable, store-specific shift definitions. Schedule versions retain their
+// exact planned timestamps so later template edits never rewrite history.
+model HrShiftTemplate {
+  id           BigInt       @id @default(autoincrement())
+  storeId      BigInt       @map("store_id")
+  code         String       @db.VarChar(30)
+  name         String       @db.VarChar(80)
+  startTime    String       @map("start_time") @db.VarChar(5)
+  endTime      String       @map("end_time") @db.VarChar(5)
+  breakMinutes Int          @default(0) @map("break_minutes")
+  sortOrder    Int          @default(0) @map("sort_order")
+  enabled      Boolean      @default(true)
+  createdBy    BigInt       @map("created_by")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  store        Store        @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  schedules    HrSchedule[]
+
+  @@unique([storeId, code])
+  @@index([storeId, enabled, sortOrder])
+  @@map("hr_shift_templates")
+}
+
+// Store-specific work locations shown beside each employee in schedule summaries.
+// The name snapshot on HrSchedule keeps historical posters readable after edits/deletion.
+model HrSchedulePoint {
+  id        BigInt       @id @default(autoincrement())
+  storeId   BigInt       @map("store_id")
+  name      String       @db.VarChar(80)
+  sortOrder Int          @default(0) @map("sort_order")
+  enabled   Boolean      @default(true)
+  createdBy BigInt       @map("created_by")
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  store     Store        @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  schedules HrSchedule[]
+
+  @@unique([storeId, name])
+  @@index([storeId, enabled, sortOrder])
+  @@map("hr_schedule_points")
+}
+
+model HrScheduleVersion {
+  scheduleId   BigInt              @map("schedule_id")
+  version      Int
+  plannedStart DateTime            @map("planned_start")
+  plannedEnd   DateTime            @map("planned_end")
+  breakMinutes Int                 @map("break_minutes")
+  createdBy    BigInt              @map("created_by")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  publishedAt  DateTime?           @map("published_at")
+  schedule     HrSchedule          @relation(fields: [scheduleId], references: [id])
+  delivery     HrScheduleDelivery?
+
+  @@id([scheduleId, version])
+  @@map("hr_schedule_versions")
+}
+
+model HrScheduleDelivery {
+  id                BigInt                   @id @default(autoincrement())
+  scheduleId        BigInt                   @map("schedule_id")
+  version           Int
+  status            HrScheduleDeliveryStatus @default(UNAVAILABLE)
+  reasonCode        String?                  @map("reason_code") @db.VarChar(80)
+  attempts          Int                      @default(0)
+  providerMessageId String?                  @map("provider_message_id") @db.VarChar(150)
+  lastAttemptAt     DateTime?                @map("last_attempt_at")
+  createdAt         DateTime                 @default(now()) @map("created_at")
+  schedule          HrSchedule               @relation(fields: [scheduleId], references: [id])
+  scheduleVersion   HrScheduleVersion        @relation(fields: [scheduleId, version], references: [scheduleId, version])
+
+  @@unique([scheduleId, version])
+  @@index([status, createdAt])
+  @@map("hr_schedule_deliveries")
+}
+
+enum HrScheduleStatus {
+  DRAFT
+  PUBLISHED
+  CANCELED
+}
+
+enum HrScheduleDeliveryStatus {
+  UNAVAILABLE
+  QUEUED
+  SENT
+  FAILED
+}
+
+// Confirmed evidence is immutable by version. The record points at its current
+// version; natural-day segments are recalculated from exact timestamps/breaks.
+model HrWorkRecord {
+  id             BigInt                @id @default(autoincrement())
+  scheduleId     BigInt                @unique @map("schedule_id")
+  employeeId     BigInt                @map("employee_id")
+  storeId        BigInt                @map("store_id")
+  currentVersion Int                   @default(1) @map("current_version")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+  schedule       HrSchedule            @relation(fields: [scheduleId], references: [id])
+  employee       HrEmployee            @relation(fields: [employeeId], references: [id])
+  store          Store                 @relation(fields: [storeId], references: [id])
+  versions       HrWorkRecordVersion[]
+  corrections    HrTimeCorrection[]
+
+  @@index([employeeId, storeId])
+  @@map("hr_work_records")
+}
+
+model HrWorkRecordVersion {
+  recordId    BigInt             @map("record_id")
+  version     Int
+  actualStart DateTime           @map("actual_start")
+  actualEnd   DateTime           @map("actual_end")
+  breaks      Json
+  rawMinutes  Int                @map("raw_minutes")
+  confirmedBy BigInt             @map("confirmed_by")
+  reason      String?            @db.Text
+  createdAt   DateTime           @default(now()) @map("created_at")
+  record      HrWorkRecord       @relation(fields: [recordId], references: [id])
+  daySegments HrWorkDaySegment[]
+
+  @@id([recordId, version])
+  @@map("hr_work_record_versions")
+}
+
+model HrWorkDaySegment {
+  recordId       BigInt              @map("record_id")
+  version        Int
+  businessDate   DateTime            @map("business_date") @db.Date
+  elapsedMinutes Int                 @map("elapsed_minutes")
+  breakMinutes   Int                 @map("break_minutes")
+  rawMinutes     Int                 @map("raw_minutes")
+  workVersion    HrWorkRecordVersion @relation(fields: [recordId, version], references: [recordId, version])
+
+  @@id([recordId, version, businessDate])
+  @@index([businessDate])
+  @@map("hr_work_day_segments")
+}
+
+model HrTimeCorrection {
+  id                 BigInt                 @id @default(autoincrement())
+  recordId           BigInt                 @map("record_id")
+  expectedVersion    Int                    @map("expected_version")
+  proposedStart      DateTime               @map("proposed_start")
+  proposedEnd        DateTime               @map("proposed_end")
+  proposedBreaks     Json                   @map("proposed_breaks")
+  proposedSegments   Json                   @map("proposed_segments")
+  proposedRawMinutes Int                    @map("proposed_raw_minutes")
+  reason             String                 @db.Text
+  requestedBy        BigInt                 @map("requested_by")
+  status             HrTimeCorrectionStatus @default(PENDING)
+  failureCode        String?                @map("failure_code") @db.VarChar(80)
+  createdAt          DateTime               @default(now()) @map("created_at")
+  appliedAt          DateTime?              @map("applied_at")
+  record             HrWorkRecord           @relation(fields: [recordId], references: [id])
+
+  @@index([recordId, status])
+  @@map("hr_time_corrections")
+}
+
+enum HrTimeCorrectionStatus {
+  PENDING
+  REJECTED
+  APPLIED
+  APPLY_FAILED
+}
+
+model HrMonthlyReview {
+  id                 BigInt                @id @default(autoincrement())
+  storeId            BigInt                @map("store_id")
+  month              DateTime              @db.Date
+  revision           Int
+  status             HrMonthlyReviewStatus @default(SUBMITTED)
+  snapshot           Json
+  snapshotHash       String                @map("snapshot_hash") @db.VarChar(64)
+  submittedBy        BigInt                @map("submitted_by")
+  submittedAt        DateTime              @default(now()) @map("submitted_at")
+  approvedAt         DateTime?             @map("approved_at")
+  invalidatedAt      DateTime?             @map("invalidated_at")
+  invalidationReason String?               @map("invalidation_reason") @db.VarChar(150)
+  store              Store                 @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, month, revision])
+  @@index([storeId, month, status])
+  @@map("hr_monthly_reviews")
+}
+
+enum HrMonthlyReviewStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+// [effectiveFrom, effectiveToExclusive); overlap checks must run in a
+// transaction locking the employee row before an appointment is written.
+model HrPrimaryAppointment {
+  id                   BigInt     @id @default(autoincrement())
+  employeeId           BigInt     @map("employee_id")
+  storeId              BigInt     @map("store_id")
+  effectiveFrom        DateTime   @map("effective_from") @db.Date
+  effectiveToExclusive DateTime?  @map("effective_to_exclusive") @db.Date
+  createdAt            DateTime   @default(now()) @map("created_at")
+  employee             HrEmployee @relation(fields: [employeeId], references: [id])
+  store                Store      @relation(fields: [storeId], references: [id])
+
+  @@unique([employeeId, effectiveFrom])
+  @@index([employeeId, effectiveToExclusive])
+  @@index([storeId, effectiveFrom])
+  @@map("hr_primary_appointments")
+}
+
+model HrRole {
+  id                   BigInt                   @id @default(autoincrement())
+  code                 String                   @unique @db.VarChar(50)
+  name                 String                   @db.VarChar(100)
+  enabled              Boolean                  @default(true)
+  onboardingAssignable Boolean                  @default(false) @map("onboarding_assignable")
+  participatesInScheduling Boolean              @default(true) @map("participates_in_scheduling")
+  showStoreSwitcher    Boolean                  @default(false) @map("show_store_switcher")
+  createdAt            DateTime                 @default(now()) @map("created_at")
+  updatedAt            DateTime                 @updatedAt @map("updated_at")
+  permissions          HrRolePermission[]
+  grants               HrRoleGrant[]
+  workflowSteps        HrApprovalWorkflowStep[]
+  approvalSteps        HrApprovalInstanceStep[]
+  onboardingRequests   HrOnboardingRequest[]
+
+  @@map("hr_roles")
+}
+
+// Workflow edits affect only future requests. Each instance copies the role
+// assigned to every step when it is opened.
+model HrApprovalWorkflow {
+  kind      HrApprovalKind           @id
+  version   Int                      @default(0)
+  updatedAt DateTime                 @updatedAt @map("updated_at")
+  steps     HrApprovalWorkflowStep[]
+  instances HrApprovalInstance[]
+
+  @@map("hr_approval_workflows")
+}
+
+model HrApprovalWorkflowStep {
+  kind     HrApprovalKind
+  position Int
+  roleId   BigInt             @map("role_id")
+  workflow HrApprovalWorkflow @relation(fields: [kind], references: [kind])
+  role     HrRole             @relation(fields: [roleId], references: [id])
+
+  @@id([kind, position])
+  @@map("hr_approval_workflow_steps")
+}
+
+model HrApprovalInstance {
+  id              BigInt                   @id @default(autoincrement())
+  kind            HrApprovalKind
+  subjectId       BigInt                   @map("subject_id")
+  scopeStoreId    BigInt                   @map("scope_store_id")
+  requestedBy     BigInt                   @map("requested_by")
+  workflowVersion Int                      @map("workflow_version")
+  status          HrApprovalStatus         @default(PENDING)
+  currentPosition Int?                     @default(1) @map("current_position")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+  workflow        HrApprovalWorkflow       @relation(fields: [kind], references: [kind])
+  steps           HrApprovalInstanceStep[]
+
+  @@unique([kind, subjectId])
+  @@index([scopeStoreId, status])
+  @@map("hr_approval_instances")
+}
+
+model HrApprovalInstanceStep {
+  instanceId BigInt                  @map("instance_id")
+  position   Int
+  roleId     BigInt                  @map("role_id")
+  decision   HrTransferDecisionType?
+  actorId    BigInt?                 @map("actor_id")
+  reason     String?                 @db.Text
+  decidedAt  DateTime?               @map("decided_at")
+  instance   HrApprovalInstance      @relation(fields: [instanceId], references: [id])
+  role       HrRole                  @relation(fields: [roleId], references: [id])
+
+  @@id([instanceId, position])
+  @@map("hr_approval_instance_steps")
+}
+
+enum HrApprovalKind {
+  TIME_CORRECTION
+  SALARY_CHANGE
+  MONTHLY_REVIEW
+  ONBOARDING
+  OFFBOARDING
+  BANK_CHANGE
+}
+
+enum HrOffboardingStatus {
+  SUBMITTED
+  APPROVED_AWAITING_EFFECTIVE
+  REJECTED
+  EFFECTIVE
+  EFFECTIVE_FAILED
+}
+
+enum HrSalaryChangeStatus {
+  SUBMITTED
+  APPROVED_AWAITING_EFFECTIVE
+  REJECTED
+  EFFECTIVE
+  EFFECTIVE_FAILED
+}
+
+model HrSalaryRate {
+  id                        BigInt               @id @default(autoincrement())
+  employeeId                BigInt               @map("employee_id")
+  hourlyRate                Decimal              @map("hourly_rate") @db.Decimal(12, 2)
+  effectiveFrom             DateTime             @map("effective_from") @db.Date
+  effectiveToExclusive      DateTime?            @map("effective_to_exclusive") @db.Date
+  sourceChangeId            BigInt?              @unique @map("source_change_id")
+  sourceOnboardingRequestId BigInt?              @unique @map("source_onboarding_request_id")
+  createdAt                 DateTime             @default(now()) @map("created_at")
+  employee                  HrEmployee           @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  sourceOnboardingRequest   HrOnboardingRequest? @relation(fields: [sourceOnboardingRequestId], references: [id], onDelete: Restrict)
+
+  @@unique([employeeId, effectiveFrom])
+  @@index([employeeId, effectiveToExclusive])
+  @@map("hr_salary_rates")
+}
+
+model HrSalaryChangeRequest {
+  id                 BigInt               @id @default(autoincrement())
+  employeeId         BigInt               @map("employee_id")
+  storeId            BigInt               @map("store_id")
+  revision           Int
+  expectedRateId     BigInt?              @map("expected_rate_id")
+  proposedRate       Decimal              @map("proposed_rate") @db.Decimal(12, 2)
+  effectiveDate      DateTime             @map("effective_date") @db.Date
+  reason             String               @db.Text
+  agreementReference String?              @map("agreement_reference") @db.VarChar(200)
+  requestedBy        BigInt               @map("requested_by")
+  status             HrSalaryChangeStatus @default(SUBMITTED)
+  appliedAt          DateTime?            @map("applied_at")
+  failureCode        String?              @map("failure_code") @db.VarChar(50)
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  employee           HrEmployee           @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  store              Store                @relation(fields: [storeId], references: [id], onDelete: Restrict)
+
+  @@unique([employeeId, revision])
+  @@index([status, effectiveDate])
+  @@map("hr_salary_change_requests")
+}
+
+model HrOffboardingRequest {
+  id                       BigInt              @id @default(autoincrement())
+  employeeId               BigInt              @map("employee_id")
+  storeId                  BigInt              @map("store_id")
+  revision                 Int
+  effectiveDate            DateTime            @map("effective_date") @db.Date
+  reason                   String              @db.Text
+  deleteAccountOnEffective Boolean             @default(true) @map("delete_account_on_effective")
+  requestedBy              BigInt              @map("requested_by")
+  status                   HrOffboardingStatus @default(SUBMITTED)
+  appliedAt                DateTime?           @map("applied_at")
+  failureCode              String?             @map("failure_code") @db.VarChar(50)
+  createdAt                DateTime            @default(now()) @map("created_at")
+  updatedAt                DateTime            @updatedAt @map("updated_at")
+  employee                 HrEmployee          @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  store                    Store               @relation(fields: [storeId], references: [id], onDelete: Restrict)
+
+  @@unique([employeeId, revision])
+  @@index([status, effectiveDate])
+  @@map("hr_offboarding_requests")
+}
+
+enum HrOnboardingStatus {
+  SUBMITTED
+  APPROVED_AWAITING_EFFECTIVE
+  REJECTED
+  EFFECTIVE
+  EFFECTIVE_FAILED
+}
+
+model HrOnboardingRequest {
+  id                      BigInt                @id @default(autoincrement())
+  employeeId              BigInt                @map("employee_id")
+  storeId                 BigInt                @map("store_id")
+  revision                Int
+  effectiveDate           DateTime              @map("effective_date") @db.Date
+  identityVersion         Int                   @map("identity_version")
+  bankVersion             Int                   @map("bank_version")
+  accountRole             UserRole?             @map("account_role")
+  accountHrRoleId         BigInt?               @map("account_hr_role_id")
+  jobPositionId           BigInt?               @map("job_position_id")
+  jobPositionNameSnapshot String?               @map("job_position_name_snapshot") @db.VarChar(100)
+  hourlyRateSnapshot      Decimal?              @map("hourly_rate_snapshot") @db.Decimal(12, 2)
+  scheduleOnlySnapshot    Boolean               @default(false) @map("schedule_only_snapshot")
+  status                  HrOnboardingStatus    @default(SUBMITTED)
+  storeVerifiedBy         BigInt                @map("store_verified_by")
+  storeVerifiedAt         DateTime              @default(now()) @map("store_verified_at")
+  appliedAt               DateTime?             @map("applied_at")
+  failureCode             String?               @map("failure_code") @db.VarChar(50)
+  createdAt               DateTime              @default(now()) @map("created_at")
+  updatedAt               DateTime              @updatedAt @map("updated_at")
+  employee                HrEmployee            @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  store                   Store                 @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  accountHrRole           HrRole?               @relation(fields: [accountHrRoleId], references: [id], onDelete: Restrict)
+  jobPosition             HrJobPosition?        @relation(fields: [jobPositionId], references: [id], onDelete: SetNull)
+  salaryRate              HrSalaryRate?
+  bankAccountVersion      HrBankAccountVersion?
+
+  @@unique([employeeId, revision])
+  @@index([status, effectiveDate])
+  @@map("hr_onboarding_requests")
+}
+
+// An approved onboarding records the exact encrypted bank draft that became
+// effective. Replacements require a separate reviewed workflow; no plaintext
+// account number or image is copied into this table.
+model HrOcrCredential {
+  id               Int      @id @default(1) @db.UnsignedSmallInt
+  credentialCipher Json     @map("credential_cipher")
+  enabled          Boolean  @default(false)
+  updatedBy        BigInt   @map("updated_by")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("hr_ocr_credentials")
+}
+
+model HrBankAccountVersion {
+  id                   BigInt                   @id @default(autoincrement())
+  employeeId           BigInt                   @map("employee_id")
+  sourceRevisionId     BigInt                   @unique @map("source_revision_id")
+  onboardingRequestId  BigInt?                  @unique @map("onboarding_request_id")
+  bankChangeRequestId  BigInt?                  @unique @map("bank_change_request_id")
+  effectiveFrom        DateTime                 @map("effective_from") @db.Date
+  effectiveToExclusive DateTime?                @map("effective_to_exclusive") @db.Date
+  approvedAt           DateTime                 @default(now()) @map("approved_at")
+  employee             HrEmployee               @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  sourceRevision       HrSensitiveDraftRevision @relation(fields: [sourceRevisionId], references: [id], onDelete: Restrict)
+  onboardingRequest    HrOnboardingRequest?     @relation(fields: [onboardingRequestId], references: [id], onDelete: Restrict)
+  bankChangeRequest    HrBankChangeRequest?     @relation(fields: [bankChangeRequestId], references: [id], onDelete: Restrict)
+
+  @@index([employeeId, effectiveFrom])
+  @@map("hr_bank_account_versions")
+}
+
+enum HrBankChangeStatus {
+  SUBMITTED
+  REJECTED
+  EFFECTIVE
+  EFFECTIVE_FAILED
+}
+
+model HrBankChangeRequest {
+  id                 BigInt                   @id @default(autoincrement())
+  employeeId         BigInt                   @map("employee_id")
+  storeId            BigInt                   @map("store_id")
+  revision           Int
+  sourceRevisionId   BigInt                   @unique @map("source_revision_id")
+  status             HrBankChangeStatus       @default(SUBMITTED)
+  verifiedBy         BigInt                   @map("verified_by")
+  verifiedAt         DateTime                 @default(now()) @map("verified_at")
+  appliedAt          DateTime?                @map("applied_at")
+  failureCode        String?                  @map("failure_code") @db.VarChar(50)
+  createdAt          DateTime                 @default(now()) @map("created_at")
+  updatedAt          DateTime                 @updatedAt @map("updated_at")
+  employee           HrEmployee               @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  store              Store                    @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  sourceRevision     HrSensitiveDraftRevision @relation(fields: [sourceRevisionId], references: [id], onDelete: Restrict)
+  bankAccountVersion HrBankAccountVersion?
+
+  @@unique([employeeId, revision])
+  @@index([storeId, status, createdAt])
+  @@map("hr_bank_change_requests")
+}
+
+enum HrApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum HrApprovalNotificationSubject {
+  APPROVAL
+  TRANSFER
+}
+
+enum HrApprovalNotificationPurpose {
+  PENDING
+  CORRECTION
+}
+
+enum HrApprovalNotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+// Outbox entries are created in the same transaction as workflow changes.
+// They retain only the notification label and applicant name required by the
+// WeChat template, never the underlying HR form data.
+model HrApprovalNotification {
+  id              BigInt                        @id @default(autoincrement())
+  subject         HrApprovalNotificationSubject
+  subjectId       BigInt                        @map("subject_id")
+  stageKey        String                        @map("stage_key") @db.VarChar(30)
+  purpose         HrApprovalNotificationPurpose
+  recipientUserId BigInt                        @map("recipient_user_id")
+  formName        String                        @map("form_name") @db.VarChar(80)
+  applicantName   String                        @map("applicant_name") @db.VarChar(80)
+  page            String                        @db.VarChar(150)
+  status          HrApprovalNotificationStatus  @default(QUEUED)
+  reasonCode      String?                       @map("reason_code") @db.VarChar(80)
+  attempts        Int                           @default(0)
+  lastAttemptAt   DateTime?                     @map("last_attempt_at")
+  sentAt          DateTime?                     @map("sent_at")
+  createdAt       DateTime                      @default(now()) @map("created_at")
+
+  @@unique([subject, subjectId, stageKey, purpose, recipientUserId], map: "hr_appr_notify_subject_stage_recipient_uq")
+  @@index([status, createdAt], map: "hr_appr_notify_status_created_idx")
+  @@index([recipientUserId, status, createdAt], map: "hr_appr_notify_recipient_status_created_idx")
+  @@map("hr_approval_notifications")
+}
+
+model HrPermission {
+  code  String             @id @db.VarChar(100)
+  name  String             @db.VarChar(100)
+  roles HrRolePermission[]
+
+  @@map("hr_permissions")
+}
+
+model HrRolePermission {
+  roleId         BigInt       @map("role_id")
+  permissionCode String       @map("permission_code") @db.VarChar(100)
+  role           HrRole       @relation(fields: [roleId], references: [id])
+  permission     HrPermission @relation(fields: [permissionCode], references: [code])
+
+  @@id([roleId, permissionCode])
+  @@map("hr_role_permissions")
+}
+
+// HR grants define account capabilities only. Store access is governed once by
+// UserStore and is shared with the operating system.
+model HrRoleGrant {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  roleId    BigInt   @map("role_id")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      HrRole   @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId])
+  @@index([roleId, active])
+  @@map("hr_role_grants")
+}
+
+model HrTransferRequest {
+  id                     BigInt               @id @default(autoincrement())
+  employeeId             BigInt               @map("employee_id")
+  fromStoreId            BigInt               @map("from_store_id")
+  toStoreId              BigInt               @map("to_store_id")
+  requestedEffectiveDate DateTime             @map("requested_effective_date") @db.Date
+  status                 HrTransferStatus     @default(PENDING)
+  nextStep               HrTransferStep?      @default(SOURCE_STORE) @map("next_step")
+  requestedBy            BigInt               @map("requested_by")
+  reason                 String               @db.Text
+  version                Int                  @default(0)
+  appliedAt              DateTime?            @map("applied_at")
+  reconciliationRequired Boolean              @default(false) @map("reconciliation_required")
+  failureCode            String?              @map("failure_code") @db.VarChar(50)
+  createdAt              DateTime             @default(now()) @map("created_at")
+  updatedAt              DateTime             @updatedAt @map("updated_at")
+  employee               HrEmployee           @relation(fields: [employeeId], references: [id])
+  fromStore              Store                @relation("HrTransferSourceStore", fields: [fromStoreId], references: [id], onUpdate: Restrict)
+  toStore                Store                @relation("HrTransferDestinationStore", fields: [toStoreId], references: [id], onUpdate: Restrict)
+  decisions              HrTransferDecision[]
+
+  @@index([employeeId, status])
+  @@index([status, requestedEffectiveDate])
+  @@map("hr_transfer_requests")
+}
+
+model HrTransferDecision {
+  id          BigInt                 @id @default(autoincrement())
+  transferId  BigInt                 @map("transfer_id")
+  step        HrTransferStep
+  decision    HrTransferDecisionType
+  actorUserId BigInt                 @map("actor_user_id")
+  reason      String?                @db.Text
+  decidedAt   DateTime               @default(now()) @map("decided_at")
+  transfer    HrTransferRequest      @relation(fields: [transferId], references: [id])
+
+  @@unique([transferId, step])
+  @@map("hr_transfer_decisions")
+}
+
+enum HrTransferStatus {
+  PENDING
+  APPROVED_AWAITING_EFFECTIVE
+  REJECTED
+  EFFECTIVE
+  EFFECTIVE_FAILED
+}
+
+enum HrTransferStep {
+  SOURCE_STORE
+  DESTINATION_STORE
+  HR
+}
+
+enum HrTransferDecisionType {
+  APPROVE
+  REJECT
 }
 
 enum UserRole {
@@ -58,25 +894,34 @@ enum UserRole {
   STORE_MANAGER
 }
 
+enum UserSource {
+  LOCAL
+  POS
+}
+
 model UserStore {
   id      BigInt @id @default(autoincrement())
   userId  BigInt @map("user_id")
   storeId BigInt @map("store_id")
   user    User   @relation(fields: [userId], references: [id])
   store   Store  @relation(fields: [storeId], references: [id])
+
   @@unique([userId, storeId])
   @@map("user_stores")
 }
 
 model ProductCategory {
-  id           BigInt             @id @default(autoincrement())
-  brandCode    String?            @map("brand_code") @db.VarChar(50)
-  categoryCode String             @map("category_code") @db.VarChar(50)
-  categoryName String             @map("category_name") @db.VarChar(100)
-  sortOrder    Int                @default(0) @map("sort_order")
-  status       Boolean            @default(true)
-  products     Product[]
-  dailySales   ProductDailySale[]
+  id             BigInt             @id @default(autoincrement())
+  brandCode      String?            @map("brand_code") @db.VarChar(50)
+  categoryCode   String             @map("category_code") @db.VarChar(50)
+  categoryName   String             @map("category_name") @db.VarChar(100)
+  sortOrder      Int                @default(0) @map("sort_order")
+  status         Boolean            @default(true)
+  reportVisible  Boolean            @default(true) @map("report_visible")
+  products       Product[]          @relation("SourceCategory")
+  reportProducts Product[]          @relation("ReportCategory")
+  dailySales     ProductDailySale[]
+
   @@unique([brandCode, categoryCode])
   @@map("product_categories")
 }
@@ -86,34 +931,57 @@ model Product {
   externalProductCode String             @unique @map("external_product_code") @db.VarChar(100)
   productName         String             @map("product_name") @db.VarChar(200)
   categoryId          BigInt             @map("category_id")
-  category            ProductCategory    @relation(fields: [categoryId], references: [id])
+  category            ProductCategory    @relation("SourceCategory", fields: [categoryId], references: [id])
+  reportCategoryId    BigInt?            @map("report_category_id")
+  reportCategory      ProductCategory?   @relation("ReportCategory", fields: [reportCategoryId], references: [id])
+  reportVisible       Boolean            @default(true) @map("report_visible")
+  reportProductId     BigInt?            @map("report_product_id")
+  reportProduct       Product?           @relation("ReportProduct", fields: [reportProductId], references: [id], onDelete: SetNull)
+  reportSources       Product[]          @relation("ReportProduct")
   salePrice           Decimal?           @map("sale_price") @db.Decimal(12, 2)
   theoreticalCost     Decimal?           @map("theoretical_cost") @db.Decimal(12, 2)
+  isPackage           Boolean            @default(false) @map("is_package")
   status              Boolean            @default(true)
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
   dailySales          ProductDailySale[]
+
+  @@index([reportProductId])
   @@map("products")
 }
 
 model BusinessPeriod {
-  id         BigInt   @id @default(autoincrement())
-  periodCode String   @unique @map("period_code") @db.VarChar(30)
-  periodName String   @map("period_name") @db.VarChar(50)
-  startTime  String   @map("start_time") @db.Char(5)
-  endTime    String   @map("end_time") @db.Char(5)
+  id              BigInt  @id @default(autoincrement())
+  periodCode      String  @unique @map("period_code") @db.VarChar(30)
+  periodName      String  @map("period_name") @db.VarChar(50)
+  startTime       String  @map("start_time") @db.Char(5)
+  endTime         String  @map("end_time") @db.Char(5)
   externalShiftId String? @unique @map("external_shift_id") @db.VarChar(100)
-  sortOrder  Int      @default(0) @map("sort_order")
-  status     Boolean  @default(true)
+  sortOrder       Int     @default(0) @map("sort_order")
+  status          Boolean @default(true)
+
   @@map("business_periods")
 }
 
 model PowerCalculationConfig {
-  id        BigInt   @id @default(autoincrement())
-  storeId   BigInt?  @unique @map("store_id")
+  id        BigInt    @id @default(autoincrement())
+  storeId   BigInt?   @unique @map("store_id")
   mode      PowerMode @default(SUM_COMPONENTS)
-  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
   @@map("power_calculation_configs")
+}
+
+model MiniappDecoration {
+  id                 Int      @id @default(1)
+  homeTitle          String   @default("米熊 · 经营工作台") @map("home_title") @db.VarChar(100)
+  homeSubtitle       String   @default("常用功能一目了然") @map("home_subtitle") @db.VarChar(200)
+  defaultHomeModules Json     @map("default_home_modules")
+  homeBannerImage    Bytes?   @map("home_banner_image") @db.LongBlob
+  homeBannerMimeType String?  @map("home_banner_mime_type") @db.VarChar(30)
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("miniapp_decorations")
 }
 
 enum PowerMode {
@@ -135,6 +1003,7 @@ model DailySale {
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
   store               Store    @relation(fields: [storeId], references: [id])
+
   @@unique([storeId, businessDate])
   @@map("daily_sales")
 }
@@ -148,6 +1017,7 @@ model SalesPeriod {
   salesAmount   Decimal  @map("sales_amount") @db.Decimal(12, 2)
   customerCount Int      @map("customer_count")
   store         Store    @relation(fields: [storeId], references: [id])
+
   @@unique([storeId, businessDate, periodCode])
   @@map("sales_periods")
 }
@@ -161,6 +1031,7 @@ model GroupBuySale {
   salesAmount   Decimal  @map("sales_amount") @db.Decimal(12, 2)
   customerCount Int      @map("customer_count")
   store         Store    @relation(fields: [storeId], references: [id])
+
   @@unique([storeId, businessDate, platformCode])
   @@map("group_buy_sales")
 }
@@ -177,6 +1048,7 @@ model ProductDailySale {
   store        Store           @relation(fields: [storeId], references: [id])
   product      Product         @relation(fields: [productId], references: [id])
   category     ProductCategory @relation(fields: [categoryId], references: [id])
+
   @@unique([storeId, businessDate, productId])
   @@map("product_daily_sales")
 }
@@ -202,6 +1074,7 @@ model StoreDailyInput {
   updatedAt          DateTime    @updatedAt @map("updated_at")
   store              Store       @relation(fields: [storeId], references: [id])
   submitter          User?       @relation(fields: [submittedBy], references: [id])
+
   @@unique([storeId, businessDate])
   @@map("store_daily_inputs")
 }
@@ -222,6 +1095,7 @@ model DailyReportState {
   lockedAt     DateTime?    @map("locked_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
   store        Store        @relation(fields: [storeId], references: [id])
+
   @@unique([storeId, businessDate])
   @@map("daily_report_states")
 }
@@ -242,11 +1116,38 @@ model ApiSyncLog {
   requestPayload  String?    @map("request_payload") @db.LongText
   responsePayload String?    @map("response_payload") @db.LongText
   errorMessage    String?    @map("error_message") @db.Text
+  alertedAt       DateTime?  @map("alerted_at")
   startedAt       DateTime   @default(now()) @map("started_at")
   finishedAt      DateTime?  @map("finished_at")
   store           Store      @relation(fields: [storeId], references: [id])
+
   @@index([storeId, businessDate, apiType])
+  @@index([status, alertedAt, id], map: "api_sync_logs_status_alerted_id_idx")
   @@map("api_sync_logs")
+}
+
+model SystemAlert {
+  id              BigInt    @id @default(autoincrement())
+  fingerprint     String    @unique @db.Char(64)
+  sourceKey       String?   @unique @map("source_key") @db.VarChar(100)
+  source          String    @db.VarChar(30)
+  severity        String    @default("ERROR") @db.VarChar(20)
+  status          String    @default("OPEN") @db.VarChar(20)
+  title           String    @db.VarChar(191)
+  message         String    @db.Text
+  route           String?   @db.VarChar(191)
+  method          String?   @db.VarChar(12)
+  httpStatus      Int?      @map("http_status")
+  suggestion      String?   @db.Text
+  occurrenceCount Int       @default(1) @map("occurrence_count")
+  firstSeenAt     DateTime  @default(now()) @map("first_seen_at")
+  lastSeenAt      DateTime  @default(now()) @map("last_seen_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, severity, lastSeenAt], map: "system_alerts_status_severity_seen_idx")
+  @@index([source, lastSeenAt], map: "system_alerts_source_seen_idx")
+  @@map("system_alerts")
 }
 
 enum SyncStatus {
@@ -266,6 +1167,67 @@ model AuditLog {
   reason     String?  @db.Text
   createdAt  DateTime @default(now()) @map("created_at")
   user       User?    @relation(fields: [userId], references: [id])
+
   @@index([entityType, entityId])
   @@map("audit_logs")
+}
+
+model FillReminderConfig {
+  id                BigInt                  @id @default(autoincrement())
+  storeId           BigInt                  @unique @map("store_id")
+  reminderTime      String                  @map("reminder_time") @db.Char(5)
+  templateId        String                  @map("template_id") @db.VarChar(100)
+  enabled           Boolean                 @default(true)
+  escalationMinutes Int                     @default(15) @map("escalation_minutes")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+  recipients        FillReminderRecipient[]
+  tasks             FillReminderTask[]
+
+  @@map("fill_reminder_configs")
+}
+
+model FillReminderRecipient {
+  id       BigInt             @id @default(autoincrement())
+  configId BigInt             @map("config_id")
+  userId   BigInt             @map("user_id")
+  priority Int                @default(1)
+  config   FillReminderConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, userId])
+  @@index([configId, priority])
+  @@map("fill_reminder_recipients")
+}
+
+model FillReminderTask {
+  id             BigInt             @id @default(autoincrement())
+  configId       BigInt             @map("config_id")
+  storeId        BigInt             @map("store_id")
+  businessDate   DateTime           @map("business_date") @db.Date
+  currentUserId  BigInt             @map("current_user_id")
+  status         String             @default("OPEN") @db.VarChar(20)
+  lastRemindedAt DateTime?          @map("last_reminded_at")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  config         FillReminderConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  logs           FillReminderLog[]
+
+  @@unique([configId, businessDate])
+  @@index([currentUserId, status])
+  @@map("fill_reminder_tasks")
+}
+
+model FillReminderLog {
+  id           BigInt           @id @default(autoincrement())
+  taskId       BigInt           @map("task_id")
+  actorUserId  BigInt?          @map("actor_user_id")
+  targetUserId BigInt           @map("target_user_id")
+  action       String           @db.VarChar(30)
+  status       String           @db.VarChar(30)
+  errorMessage String?          @map("error_message") @db.Text
+  createdAt    DateTime         @default(now()) @map("created_at")
+  task         FillReminderTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+  @@map("fill_reminder_logs")
 }
