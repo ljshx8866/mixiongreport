@@ -24,6 +24,7 @@ import { HrApprovalInboxService } from './hr/hr-approval-inbox.service';
 import { HrApprovalInboxController } from './hr/hr-approval-inbox.controller';
 import { HrApprovalNotificationService } from './hr/hr-approval-notification.service';
 import { HrEmployeeController } from './hr/hr-employee.controller';
+import { HrEmployeeExportService } from './hr/hr-employee-export.service';
 import { HrScheduleController } from './hr/hr-schedule.controller';
 import { HrScheduleService } from './hr/hr-schedule.service';
 import { HrScheduleNotificationService } from './hr/hr-schedule-notification.service';
@@ -65,6 +66,6 @@ import { PasswordPolicyService } from './password-policy.service';
     JwtModule.register({ global: true, secret: process.env.JWT_SECRET || 'development-only-secret', signOptions: { expiresIn: '12h' } }),
   ],
   controllers: [HealthController, AuthController, ReportController, MasterDataController, DailyInputController, SyncController, AdministrationController, PasswordPolicyController, ExportController, ReminderController, HrRoleAdminController, HrCurrentAccessController, HrTransferController, HrApprovalInboxController, HrEmployeeController, HrSensitiveDraftController, HrOcrPreviewController, HrOcrCredentialsController, HrOnboardingController, HrJobPositionController, HrOffboardingController, HrSalaryController, HrScheduleController, HrTimeController, HrTimeCorrectionController, HrMonthlyReviewController, HrBankChangeController, MiniappDecorationController, UserNotificationsController, SystemAlertController],
-  providers: [PrismaService, DailyReportService, SyncService, AuthService, PasswordPolicyService, ReminderService, HrAccessService, HrApprovalNotificationService, HrTransferService, HrApprovalService, HrApprovalInboxService, HrScheduleService, HrScheduleNotificationService, HrTimeService, HrTimeCorrectionService, HrSensitiveDraftService, HrOcrPreviewService, HrOcrUploadGuard, HrOcrCredentialsService, HrOnboardingService, HrJobPositionService, HrOffboardingService, HrSalaryService, HrMonthlyReviewService, HrMonthlyExportService, HrBankChangeService, SystemAlertService, { provide: APP_FILTER, useClass: SystemAlertExceptionFilter }, { provide: APP_GUARD, useClass: JwtAccessGuard }],
+  providers: [PrismaService, DailyReportService, SyncService, AuthService, PasswordPolicyService, ReminderService, HrAccessService, HrApprovalNotificationService, HrTransferService, HrApprovalService, HrApprovalInboxService, HrScheduleService, HrScheduleNotificationService, HrTimeService, HrTimeCorrectionService, HrSensitiveDraftService, HrOcrPreviewService, HrOcrUploadGuard, HrOcrCredentialsService, HrOnboardingService, HrJobPositionService, HrOffboardingService, HrSalaryService, HrMonthlyReviewService, HrMonthlyExportService, HrEmployeeExportService, HrBankChangeService, SystemAlertService, { provide: APP_FILTER, useClass: SystemAlertExceptionFilter }, { provide: APP_GUARD, useClass: JwtAccessGuard }],
 })
 export class AppModule {}

@@ -24,6 +24,7 @@ release-staging/
 *.tar.gz
 *.tgz
 *.sql
+!database/prisma/migrations/**/migration.sql
 *.sql.gz
 *.dump
 backups/

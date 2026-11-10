@@ -20,6 +20,7 @@ const status = ref('ALL')
 const search = ref('')
 const employees = ref<Employee[]>([])
 const busy = ref(false)
+const exporting = ref(false)
 const error = ref('')
 const initialized = ref(false)
 const page = ref(1), pageSize = ref(20)
@@ -43,6 +44,14 @@ const accountCandidatesLoading = ref(false)
 const accountLinkSaving = ref(false)
 const visibleEmployees = computed(() => employees.value.filter(employee => status.value === 'ALL' || employee.status === status.value))
 const pagedEmployees = computed(() => visibleEmployees.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
+const exportPermissionCodes = ['HR_EMPLOYEE_EXPORT', 'HR_EMPLOYEE_DETAIL_READ', 'HR_EMPLOYEE_SENSITIVE_READ']
+const canExport = computed(() => {
+  const listStores = props.stores.filter(store => store.permissionCodes?.includes('HR_EMPLOYEE_LIST_READ'))
+  const permitted = (store: Store) => exportPermissionCodes.every(code => store.permissionCodes?.includes(code))
+  if (storeId.value === 'ALL') return listStores.length > 0 && listStores.every(permitted)
+  const selected = listStores.find(store => String(store.id) === storeId.value)
+  return Boolean(selected && permitted(selected))
+})
 watch([status, search], () => { page.value = 1 })
 watch(storeId, () => { page.value = 1; if (initialized.value) void load() })
 
@@ -58,6 +67,28 @@ async function load() {
     initialized.value = true
   } catch (cause) { error.value = cause instanceof Error ? cause.message : '员工列表读取失败' }
   finally { busy.value = false }
+}
+
+async function exportRoster() {
+  if (!canExport.value || exporting.value) return
+  exporting.value = true; error.value = ''
+  try {
+    const query = new URLSearchParams({ status: status.value, q: search.value.trim() })
+    if (storeId.value !== 'ALL') query.set('storeId', storeId.value)
+    const response = await fetch(`${props.apiBase}/api/hr/employees/export.xlsx?${query}`, { headers: props.headers() })
+    if (!response.ok) {
+      const data = await response.json().catch(() => null)
+      const raw = data?.message
+      throw new Error(Array.isArray(raw) ? raw.join('；') : typeof raw === 'string' ? raw : '员工档案导出失败，请稍后重试')
+    }
+    const url = URL.createObjectURL(await response.blob())
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `员工完整档案-${storeId.value === 'ALL' ? '全部授权门店' : storeName(Number(storeId.value))}.xlsx`
+    anchor.click()
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  } catch (cause) { error.value = cause instanceof Error ? cause.message : '员工档案导出失败，请稍后重试' }
+  finally { exporting.value = false }
 }
 
 async function permanentlyDelete() {
@@ -236,6 +267,9 @@ onMounted(load)
         <option value="DRAFT">待入职处理</option></select></label>
       <label class="search-field">姓名<input v-model="search" maxlength="100" placeholder="搜索员工姓名" /></label>
       <button :disabled="busy">{{ busy ? '查询中…' : '查询' }}</button>
+      <button v-if="canExport" type="button" class="export-button" :disabled="busy || exporting" @click="exportRoster">
+        {{ exporting ? '导出中…' : '导出完整档案' }}
+      </button>
     </form>
     <p v-if="error" class="error" v-popup-error="error">{{ error }}</p>
     <div v-if="visibleEmployees.length" class="table-scroll"><table><thead><tr>
@@ -304,7 +338,7 @@ onMounted(load)
 </template>
 
 <style scoped>
-.roster-heading{display:flex;justify-content:space-between;align-items:center;gap:16px}.roster h2{margin:0}.roster p{margin:6px 0 0;color:#64748b}.count{padding:7px 12px;border-radius:999px;background:#fff1e8;color:#c95c24;font-weight:700;white-space:nowrap}.filters{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:22px 0}.filters label{display:grid;gap:6px;min-width:160px;color:#526176;font-size:13px}.filters select,.filters input{height:38px;border:1px solid #dce3ec;border-radius:8px;background:#fff;padding:0 10px;color:#26344b}.search-field{flex:1}.filters button{height:38px;padding:0 20px}.table-scroll{overflow:auto}.table-scroll table{width:100%;min-width:720px}.employee-name{font-weight:700}.status-pill{display:inline-block;padding:4px 9px;border-radius:999px;background:#eff3f8;color:#64748b}.status-pill.active{background:#e8f7ef;color:#208150}.status-pill.terminated{background:#f2f3f6;color:#717c8d}.status-pill.draft{background:#fff3e8;color:#b56427}.status-detail{display:block;margin-top:5px;color:#9a5a16;line-height:1.45;white-space:normal}.empty{padding:32px 12px;text-align:center;color:#8793a4}.error{color:#b42318}
+.roster-heading{display:flex;justify-content:space-between;align-items:center;gap:16px}.roster h2{margin:0}.roster p{margin:6px 0 0;color:#64748b}.count{padding:7px 12px;border-radius:999px;background:#fff1e8;color:#c95c24;font-weight:700;white-space:nowrap}.filters{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:22px 0}.filters label{display:grid;gap:6px;min-width:160px;color:#526176;font-size:13px}.filters select,.filters input{height:38px;border:1px solid #dce3ec;border-radius:8px;background:#fff;padding:0 10px;color:#26344b}.search-field{flex:1}.filters button{height:38px;padding:0 20px}.filters .export-button{border:1px solid #e7a178;border-radius:8px;background:#fff7f1;color:#b94b1d}.filters .export-button:disabled{opacity:.55}.table-scroll{overflow:auto}.table-scroll table{width:100%;min-width:720px}.employee-name{font-weight:700}.status-pill{display:inline-block;padding:4px 9px;border-radius:999px;background:#eff3f8;color:#64748b}.status-pill.active{background:#e8f7ef;color:#208150}.status-pill.terminated{background:#f2f3f6;color:#717c8d}.status-pill.draft{background:#fff3e8;color:#b56427}.status-detail{display:block;margin-top:5px;color:#9a5a16;line-height:1.45;white-space:normal}.empty{padding:32px 12px;text-align:center;color:#8793a4}.error{color:#b42318}
 .delete-backdrop{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:18px;background:#10182888}.delete-dialog{width:min(520px,100%);padding:22px;border-radius:14px;background:#fff;box-shadow:0 22px 70px #10182855}.delete-dialog h3{margin:0}.delete-dialog p{line-height:1.7;color:#59677b}.delete-dialog label{display:grid;gap:7px;font-size:13px}.delete-dialog textarea{min-height:82px;padding:10px;border:1px solid #d7dee8;border-radius:8px;resize:vertical}.delete-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}.delete-actions button{padding:8px 14px}.danger{border:0;border-radius:7px;background:#c53932;color:#fff}.danger:disabled{opacity:.5}
 .delete-dialog label.account-option{display:flex;align-items:center;gap:9px;margin:14px 0;padding:11px;border-radius:8px;background:#fff5ef;color:#344054}.delete-dialog .account-option input{width:17px;height:17px}.delete-dialog .account-hint{margin:0 0 14px;color:#8a5b3d;font-size:13px}
 .position-note{display:block;margin-top:4px;color:#34729c;font-size:11px}.detail-link{padding:5px 0;border:0;background:transparent;color:#c5521d}.detail-backdrop{position:fixed;inset:0;z-index:1210;display:grid;place-items:center;padding:18px;background:#10182888}.detail-dialog{box-sizing:border-box;width:min(620px,100%);max-height:88vh;overflow:auto;padding:24px;border-radius:14px;background:#fff;box-shadow:0 22px 70px #10182855}.detail-dialog header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.detail-dialog h3{margin:0}.detail-dialog header p{margin:6px 0;color:#758196}.detail-dialog h4{margin:20px 0 7px}.detail-row{display:flex;justify-content:space-between;gap:18px;padding:12px 0;border-top:1px solid #edf0f4;line-height:1.5}.detail-row span{flex:none;color:#8490a2}.detail-row b{text-align:right;white-space:pre-wrap;overflow-wrap:anywhere;color:#344054}.detail-empty{color:#8793a4}.close{padding:6px 12px;background:#eef3f9;color:#344054}

@@ -1,4 +1,4 @@
-import { BadRequestException, Body, ConflictException, Controller, Delete, ForbiddenException, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, Delete, ForbiddenException, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Query, Req, Res } from '@nestjs/common';
 import { HrApprovalKind, HrEmployeeStatus, Prisma, UserRole } from '@prisma/client';
 import { calculateDailyWorkTime } from '@restaurant/hr-engine';
 import { HrSensitiveDraftKind } from '@prisma/client';
@@ -11,6 +11,7 @@ import { deleteHrLinkedAccount } from './hr-user-account';
 import { normalizeEmployeePhone } from './hr-sensitive-draft.service';
 import { calculateConfirmedWorkPay } from './hr-hourly-pay';
 import { roleAllowsScheduling } from './hr-scheduling-eligibility';
+import { HrEmployeeExportService } from './hr-employee-export.service';
 
 function positiveId(value: unknown): bigint {
   const parsed = typeof value === 'number' || typeof value === 'string' ? Number(value) : NaN;
@@ -35,7 +36,8 @@ function decimalCents(value: unknown): bigint | null {
 
 @Controller('api/hr/employees')
 export class HrEmployeeController {
-  constructor(private readonly db: PrismaService, private readonly access: HrAccessService) {}
+  constructor(private readonly db: PrismaService, private readonly access: HrAccessService,
+    private readonly employeeExports: HrEmployeeExportService) {}
 
   @Get('trials') async listTrials(@Req() request: RequestWithUser,
     @Query('storeId') storeIdInput: string) {
@@ -201,6 +203,17 @@ export class HrEmployeeController {
       status: employee.status,
       storeName: employee.primaryAppointments[0]?.store.storeName ?? null,
     };
+  }
+
+  @Get('export.xlsx') async exportRoster(@Req() request: RequestWithUser,
+    @Query('storeId') storeId: string | undefined, @Query('status') status: string | undefined,
+    @Query('q') search: string | undefined, @Res() response: any) {
+    const file = await this.employeeExports.generate(request.user, { storeId, status, q: search });
+    response.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    response.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`);
+    response.setHeader('Cache-Control', 'private, no-store');
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    response.send(file.buffer);
   }
 
   @Get(':employeeId') async detail(@Req() request: RequestWithUser,

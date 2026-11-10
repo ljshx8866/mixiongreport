@@ -65,6 +65,7 @@ export const HR_PERMISSIONS = [
 
   // 人事管理
   { code: 'HR_EMPLOYEE_LIST_READ', name: '查看员工列表', domain: '人事管理', module: '员工档案' },
+  { code: 'HR_EMPLOYEE_EXPORT', name: '导出员工完整档案（含身份证和银行卡）', domain: '人事管理', module: '员工档案' },
   { code: 'HR_TRIAL_MANAGE', name: '录入和结束试岗', domain: '人事管理', module: '试岗管理' },
   { code: 'HR_EMPLOYEE_DETAIL_READ', name: '查看员工详情', domain: '人事管理', module: '员工档案' },
   { code: 'HR_EMPLOYEE_SENSITIVE_READ', name: '查看完整身份证和银行卡资料', domain: '人事管理', module: '员工档案' },
